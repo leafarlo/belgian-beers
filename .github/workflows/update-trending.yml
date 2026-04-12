@@ -1,0 +1,95 @@
+name: Update Trending Beers
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Every Monday at 06:00 UTC
+  workflow_dispatch:        # Allow manual trigger from the GitHub Actions tab
+
+jobs:
+  update-trending:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch trending Belgian beers from Untappd API
+        env:
+          UNTAPPD_CLIENT_ID: ${{ secrets.UNTAPPD_CLIENT_ID }}
+          UNTAPPD_CLIENT_SECRET: ${{ secrets.UNTAPPD_CLIENT_SECRET }}
+        run: |
+          # Register for a free Untappd developer account at:
+          # https://untappd.com/api/register
+          # Then add UNTAPPD_CLIENT_ID and UNTAPPD_CLIENT_SECRET as
+          # GitHub repository secrets (Settings → Secrets and variables → Actions).
+
+          RESPONSE=$(curl -sf \
+            "https://api.untappd.com/v4/beer/trending?client_id=${UNTAPPD_CLIENT_ID}&client_secret=${UNTAPPD_CLIENT_SECRET}" \
+            -H "User-Agent: belgian-beers-site/1.0")
+
+          if [ -z "$RESPONSE" ]; then
+            echo "Untappd API returned empty response — keeping existing trending.json"
+            exit 0
+          fi
+
+          python3 - <<'PYEOF'
+          import json, os, sys
+          from datetime import datetime, timezone
+
+          raw = os.environ.get('RESPONSE', '')
+          if not raw:
+              with open('data/trending.json') as f:
+                  raw = f.read()
+              data = json.loads(raw)
+          else:
+              data = json.loads(raw)
+
+          items = data.get('response', {}).get('beers', {}).get('items', [])
+
+          # Filter to only Belgian beers (by country tag or brewery country)
+          belgian = [
+              i for i in items
+              if i.get('brewery', {}).get('country_name', '').lower() == 'belgium'
+              or i.get('beer', {}).get('beer_style', '').lower() in (
+                  'trappist', 'abbey dubbel', 'abbey tripel', 'witbier',
+                  'gueuze', 'lambic', 'saison', 'flanders red ale'
+              )
+          ]
+
+          # Fall back to top global beers if not enough Belgian ones
+          source = belgian[:5] if len(belgian) >= 3 else items[:5]
+
+          trending = [
+              {
+                  'rank': idx + 1,
+                  'name': b['beer']['beer_name'],
+                  'style': b['beer']['beer_style'],
+                  'rating': round(b['beer']['rating_score'], 2),
+                  'checkins': f"{b['beer']['count']:,}"
+              }
+              for idx, b in enumerate(source)
+          ]
+
+          output = {
+              'last_updated': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+              'beers': trending
+          }
+
+          with open('data/trending.json', 'w') as f:
+              json.dump(output, f, indent=2)
+
+          print(f"Updated trending.json with {len(trending)} beers")
+          PYEOF
+        shell: bash
+
+      - name: Commit changes if trending data changed
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git diff --quiet data/trending.json || (
+            git add data/trending.json &&
+            git commit -m "chore: update trending beers [skip ci]" &&
+            git push
+          )

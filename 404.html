@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Not Found — Belgian Beers</title>
+  <!-- GitHub Pages SPA redirect: sends any 404 back to index.html -->
+  <script>
+    const path = window.location.pathname + window.location.search + window.location.hash;
+    window.location.replace('/' + window.location.pathname.split('/')[1] + '/' + '?redirect=' + encodeURIComponent(path));
+  </script>
+  <style>
+    body { font-family: sans-serif; background: #0c0a07; color: #f5f0e8; display: flex; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
+    a { color: #d4a017; }
+  </style>
+</head>
+<body>
+  <div>
+    <p style="font-size:4rem">🍺</p>
+    <h1>Page Not Found</h1>
+    <p>Redirecting you back to the Belgian Beers guide…</p>
+    <p><a href="/">Go to homepage</a></p>
+  </div>
+</body>
+</html>

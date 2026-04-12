@@ -1,0 +1,10 @@
+{
+  "last_updated": "2026-04-12",
+  "beers": [
+    { "rank": 1, "name": "Westvleteren 12", "style": "Trappist Quad", "rating": 4.62, "checkins": "12.4K" },
+    { "rank": 2, "name": "Cantillon Gueuze", "style": "Lambic - Gueuze", "rating": 4.35, "checkins": "9.8K" },
+    { "rank": 3, "name": "Rochefort 10", "style": "Trappist Quad", "rating": 4.31, "checkins": "11.1K" },
+    { "rank": 4, "name": "Westmalle Tripel", "style": "Trappist Tripel", "rating": 4.12, "checkins": "8.6K" },
+    { "rank": 5, "name": "Duvel", "style": "Strong Golden Ale", "rating": 4.05, "checkins": "15.2K" }
+  ]
+}

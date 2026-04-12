@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Belgian Beers & Your Personality</title>
-  <meta name="description" content="Discover 34 famous Belgian beers, find your personality match, explore 20 Brussels cafes on an interactive map, and see this week's trending beers.">
+  <title>Belgian Beers — Find Your Perfect Match in Brussels</title>
+  <meta name="description" content="Discover 34 famous Belgian beers, find Brussels cafés that serve them, explore the map, and see trending picks. Perfect for tourists.">
+  <meta property="og:title" content="Belgian Beers — Find Your Perfect Match">
+  <meta property="og:description" content="34 iconic Belgian beers, Brussels café finder with map, personality quiz, and weekly trending picks. The tourist's guide to Belgian beer.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0c0a07">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -120,6 +124,8 @@
     .lucky-btn.again:hover{transform:scale(1.05);box-shadow:0 6px 20px rgba(231,76,60,0.3)}
     .lucky-btn.close{background:transparent;border:1px solid var(--border);color:var(--text-muted)}
     .lucky-btn.close:hover{border-color:var(--text-muted);color:var(--text)}
+    .lucky-btn.find-cafe{background:linear-gradient(135deg,#3b82f6,#2563eb);color:white}
+    .lucky-btn.find-cafe:hover{transform:scale(1.05);box-shadow:0 6px 20px rgba(59,130,246,0.3)}
     .lucky-spinner{display:none;flex-direction:column;align-items:center;gap:20px}
     .lucky-spinner.show{display:flex}
     .lucky-spinner .dice{font-size:5rem;animation:spin-dice .6s ease-in-out infinite}
@@ -177,6 +183,17 @@
     .map-legend-item{display:flex;align-items:center;gap:6px}
     .map-legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
 
+    /* NIGHT SHOPS */
+    .nightshops-btn{background:linear-gradient(135deg,#7c3aed,#5b21b6)}
+    .nightshops-btn.active{background:linear-gradient(135deg,#a855f7,#7c3aed);box-shadow:0 0 16px rgba(168,85,247,0.3)}
+    .night-shop-card{background:var(--surface);border:1px solid rgba(168,85,247,0.35);border-radius:16px;padding:24px;transition:transform .3s}
+    .night-shop-card:hover{transform:translateY(-3px)}
+    .night-shop-card h3{font-family:'Playfair Display',serif;color:#c084fc;font-size:1.1rem;margin-bottom:4px}
+    .night-shop-card .ns-address{color:var(--text-dim);font-size:0.78rem;margin-bottom:6px}
+    .night-shop-card .ns-hours{background:rgba(168,85,247,0.12);color:#c084fc;padding:3px 10px;border-radius:20px;font-size:0.73rem;font-weight:600;border:1px solid rgba(168,85,247,0.3);display:inline-block;margin-bottom:10px}
+    .night-shops-section{margin-top:32px}
+    .night-shops-section h3{font-family:'Playfair Display',serif;color:#c084fc;font-size:1.1rem;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+    .night-shops-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;padding-bottom:40px}
     footer{text-align:center;padding:30px;color:#3a3328;font-size:.78rem;border-top:1px solid #1a1510}
     @media(max-width:500px){.beer-grid,.cafe-grid{grid-template-columns:1fr}.filter-bar input[type="text"]{width:100%}.map-wrapper{height:450px}.trending-list{gap:10px}.trending-card{flex:0 0 190px}}
   </style>
@@ -219,7 +236,10 @@
 <section id="cafes" class="section">
   <div class="cafe-section-header">
     <h2>🍻 Top 20 Beer Cafés in Brussels</h2>
-    <button class="locate-btn" id="locate-btn" onclick="getUserLocation()">📍 Find Nearest Café</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="locate-btn" id="locate-btn" onclick="getUserLocation()">📍 Find Nearest Café</button>
+      <button class="locate-btn nightshops-btn" id="nightshops-toggle" onclick="toggleNightShops()">🌙 Night Shops</button>
+    </div>
   </div>
   <div class="user-location-info" id="location-info"></div>
   <div class="filter-bar">
@@ -227,6 +247,10 @@
     <input type="text" id="cafe-search" class="cafe-search" placeholder="Search café or beer name…" oninput="renderCafes()">
   </div>
   <div class="cafe-grid" id="cafe-grid"></div>
+  <div class="night-shops-section" id="night-shops-section" style="display:none">
+    <h3>🌙 Night Shops — Central Brussels (1000)</h3>
+    <div class="night-shops-grid" id="night-shops-grid"></div>
+  </div>
 </section>
 
 <!-- ═══════ MAP ═══════ -->
@@ -276,6 +300,23 @@
   </div>
 </div>
 
+<!-- BEER DETAIL OVERLAY -->
+<div class="lucky-overlay" id="beer-detail-overlay">
+  <div class="lucky-card" id="beer-detail-card" style="display:none">
+    <span class="lucky-badge" style="background:linear-gradient(135deg,var(--gold),#c7943e);color:var(--bg)">🍺 Beer Details</span>
+    <div id="beer-detail-visual"></div>
+    <div class="lucky-card-body">
+      <h2 id="beer-detail-name"></h2>
+      <div class="lucky-meta" id="beer-detail-meta"></div>
+      <p id="beer-detail-desc"></p>
+      <div class="lucky-buttons">
+        <button class="lucky-btn find-cafe" id="beer-detail-find-btn">📍 Find Nearest Café</button>
+        <button class="lucky-btn close" onclick="closeBeerDetail()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- NEAREST CAFE OVERLAY -->
 <div class="nearest-overlay" id="nearest-overlay">
   <div class="nearest-card" id="nearest-card">
@@ -298,24 +339,28 @@
 const beerColors={dark:{liquid:"#3d1f00",liquid2:"#5c3310",foam:"#d4c8a8",bg:"#5c3d2e"},amber:{liquid:"#8b4513",liquid2:"#a0522d",foam:"#e8dcc0",bg:"#8b5e3c"},gold:{liquid:"#d4a017",liquid2:"#e8b84a",foam:"#f5f0e0",bg:"#d4a017"},pale:{liquid:"#e8c840",liquid2:"#f0d860",foam:"#faf5e8",bg:"#e8c840"},hazy:{liquid:"#e0d090",liquid2:"#ebe0a8",foam:"#faf8f0",bg:"#ddd0a0"},red:{liquid:"#7a1a10",liquid2:"#9a2a18",foam:"#e0c8b0",bg:"#a03830"},cherry:{liquid:"#a01020",liquid2:"#c02030",foam:"#f0d0d0",bg:"#c03040"}};
 function getBeerColor(b){const t=b.type.toLowerCase(),n=b.name.toLowerCase();if(t.includes('witbier'))return beerColors.hazy;if(t.includes('pilsner'))return beerColors.pale;if(t.includes('flanders red'))return beerColors.red;if(t.includes('fruit lambic'))return beerColors.cherry;if(t.includes('gueuze')||t.includes('lambic')||t.includes('saison'))return beerColors.pale;if(t.includes('quadrupel')||n.includes('abt')||n.includes('rochefort')||n.includes('gulden draak')||t.includes('dubbel')||t.includes('brown')||n.includes('chimay red')||n.includes('chimay blue')||t.includes('strong dark'))return beerColors.dark;if(t.includes('strong amber'))return beerColors.amber;return beerColors.gold}
 function makeBeerSVG(beer){const c=getBeerColor(beer),id=Math.random().toString(36).substr(2,6);return`<svg viewBox="0 0 120 170" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="lq${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${c.liquid2}"/><stop offset="100%" stop-color="${c.liquid}"/></linearGradient><linearGradient id="gl${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgba(255,255,255,0.14)"/><stop offset="50%" stop-color="rgba(255,255,255,0.02)"/><stop offset="100%" stop-color="rgba(255,255,255,0.1)"/></linearGradient></defs><ellipse cx="60" cy="158" rx="20" ry="4" fill="rgba(255,255,255,0.06)"/><rect x="57" y="120" width="6" height="38" rx="2" fill="rgba(255,255,255,0.1)"/><ellipse cx="60" cy="158" rx="18" ry="3" fill="rgba(255,255,255,0.08)"/><path d="M32 35 Q28 55 32 75 Q36 95 42 105 Q46 115 50 120 L70 120 Q74 115 78 105 Q84 95 88 75 Q92 55 88 35 Z" fill="url(#lq${id})" stroke="rgba(255,255,255,0.1)" stroke-width="1"/><path d="M32 35 Q28 55 32 75 Q36 95 42 105 Q46 115 50 120 L70 120 Q74 115 78 105 Q84 95 88 75 Q92 55 88 35 Z" fill="url(#gl${id})"/><ellipse cx="60" cy="35" rx="28" ry="10" fill="${c.foam}" opacity="0.9"/><ellipse cx="53" cy="33" rx="8" ry="3" fill="rgba(255,255,255,0.3)"/><ellipse cx="68" cy="35" rx="5" ry="2.5" fill="rgba(255,255,255,0.2)"/></svg>`}
-function makeBeerVisual(beer,h){if(beer.img)return`<img src="${beer.img}" alt="${beer.name}" style="width:100%;height:${h}px;object-fit:cover" loading="lazy">`;const c=getBeerColor(beer);return`<div style="width:100%;height:${h}px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:linear-gradient(145deg,var(--surface2),var(--surface))"><div class="bg-glow" style="background:${c.bg}"></div><div style="position:relative;z-index:2;width:120px;height:170px;filter:drop-shadow(0 4px 20px rgba(0,0,0,0.3))">${makeBeerSVG(beer)}</div><span class="beer-type-label">${beer.type}</span></div>`}
+function makeBeerSVGFallback(beer,h){const c=getBeerColor(beer);return`<div style="width:100%;height:${h}px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:linear-gradient(145deg,var(--surface2),var(--surface))"><div class="bg-glow" style="background:${c.bg}"></div><div style="position:relative;z-index:2;width:120px;height:170px;filter:drop-shadow(0 4px 20px rgba(0,0,0,0.3))">${makeBeerSVG(beer)}</div><span class="beer-type-label">${beer.type}</span></div>`}
+function beerImgError(img){const w=img.closest('[data-beer-n]');if(!w)return;const b=beers.find(x=>x.name===w.dataset.beerN);const h=+w.dataset.beerH;if(b)w.innerHTML=makeBeerSVGFallback(b,h)}
+function makeBeerVisual(beer,h){if(beer.img)return`<div data-beer-n="${beer.name.replace(/"/g,'&quot;')}" data-beer-h="${h}"><img src="${beer.img}" alt="${beer.name}" style="width:100%;height:${h}px;object-fit:cover" loading="lazy" onerror="beerImgError(this)"></div>`;return makeBeerSVGFallback(beer,h)}
 
 // ═══════════════════════════════════════
 //  BEER DATABASE (34 beers)
 // ═══════════════════════════════════════
 const beers=[
-{name:"Chimay Blue",type:"Trappist",abv:9.0,region:"Hainaut",brewery:"Abbaye de Scourmont",personality:"thinker",img:"images/chimay_blue.png",lat:50.0589,lng:4.3125,desc:"A world-class dark Trappist ale. Deep caramel, dark fruit, and spice. Brewed by monks since 1862."},
+// To find more Wikipedia Commons images: visit https://commons.wikimedia.org/w/index.php?search=[beer+name]
+// and copy the URL from the "Original file" link. Use https://upload.wikimedia.org/... format.
+{name:"Chimay Blue",type:"Trappist",abv:9.0,region:"Hainaut",brewery:"Abbaye de Scourmont",personality:"thinker",img:"https://upload.wikimedia.org/wikipedia/commons/0/0c/Chimay_bleu.jpg",lat:50.0589,lng:4.3125,desc:"A world-class dark Trappist ale. Deep caramel, dark fruit, and spice. Brewed by monks since 1862."},
 {name:"Chimay Red",type:"Trappist",abv:7.0,region:"Hainaut",brewery:"Abbaye de Scourmont",personality:"nurturer",img:"",lat:50.0589,lng:4.3125,desc:"The original Chimay — warm, coppery-brown, with rich fruit and gentle bitterness."},
-{name:"Chimay Triple",type:"Trappist Tripel",abv:8.0,region:"Hainaut",brewery:"Abbaye de Scourmont",personality:"achiever",img:"",lat:50.0589,lng:4.3125,desc:"Bright golden Trappist. Dry bitter notes, citrus, and white pepper."},
+{name:"Chimay Triple",type:"Trappist Tripel",abv:8.0,region:"Hainaut",brewery:"Abbaye de Scourmont",personality:"achiever",img:"https://upload.wikimedia.org/wikipedia/commons/2/26/Chimay_triple.jpg",lat:50.0589,lng:4.3125,desc:"Bright golden Trappist. Dry bitter notes, citrus, and white pepper."},
 {name:"Westmalle Dubbel",type:"Trappist Dubbel",abv:7.0,region:"Antwerp",brewery:"Abdij van Westmalle",personality:"nurturer",img:"",lat:51.2897,lng:4.6697,desc:"The archetype of the Dubbel style — rich malt, dark fruit, caramel, and chocolate."},
 {name:"Westmalle Tripel",type:"Trappist Tripel",abv:9.5,region:"Antwerp",brewery:"Abdij van Westmalle",personality:"achiever",img:"",lat:51.2897,lng:4.6697,desc:"The original Tripel — golden, complex, and dangerously drinkable at 9.5%."},
-{name:"Westvleteren 12",type:"Trappist",abv:10.2,region:"West Flanders",brewery:"Sint-Sixtusabdij",personality:"thinker",img:"images/westvleteren_12.png",lat:50.8956,lng:2.7225,desc:"Often called the best beer in the world. Incredibly rare. Dark fruit and profound complexity."},
+{name:"Westvleteren 12",type:"Trappist",abv:10.2,region:"West Flanders",brewery:"Sint-Sixtusabdij",personality:"thinker",img:"https://upload.wikimedia.org/wikipedia/commons/c/cc/Westvleteren_XII.JPG",lat:50.8956,lng:2.7225,desc:"Often called the best beer in the world. Incredibly rare. Dark fruit and profound complexity."},
 {name:"Westvleteren Blond",type:"Trappist",abv:5.8,region:"West Flanders",brewery:"Sint-Sixtusabdij",personality:"diplomat",img:"",lat:50.8956,lng:2.7225,desc:"The lightest Westvleteren — crisp, hoppy, and elegant."},
-{name:"Orval",type:"Trappist",abv:6.2,region:"Luxembourg",brewery:"Abbaye d'Orval",personality:"creative",img:"",lat:49.6378,lng:5.3478,desc:"Unique — dry-hopped and Brettanomyces-fermented. Funky, herbal, evolving."},
+{name:"Orval",type:"Trappist",abv:6.2,region:"Luxembourg",brewery:"Abbaye d'Orval",personality:"creative",img:"https://upload.wikimedia.org/wikipedia/commons/3/3e/Orval_beer_and_glass.jpg",lat:49.6378,lng:5.3478,desc:"Unique — dry-hopped and Brettanomyces-fermented. Funky, herbal, evolving."},
 {name:"Rochefort 10",type:"Trappist",abv:11.3,region:"Namur",brewery:"Abbaye de Saint-Rémy",personality:"thinker",img:"",lat:50.1608,lng:5.2217,desc:"Pure liquid luxury at 11.3%. Dark chocolate, ripe fig, port wine."},
 {name:"Rochefort 8",type:"Trappist",abv:9.2,region:"Namur",brewery:"Abbaye de Saint-Rémy",personality:"thinker",img:"",lat:50.1608,lng:5.2217,desc:"Dark, complex, and brooding with fig, date, and chocolate notes."},
-{name:"Duvel",type:"Strong Golden Ale",abv:8.5,region:"Antwerp",brewery:"Duvel Moortgat",personality:"achiever",img:"images/duvel.png",lat:51.0583,lng:4.3153,desc:"The 'Devil' — golden, effervescent, and deceptively strong. Iconic."},
-{name:"Delirium Tremens",type:"Strong Golden Ale",abv:8.5,region:"East Flanders",brewery:"Brouwerij Huyghe",personality:"free-spirit",img:"images/delirium_tremens.png",lat:51.0003,lng:3.8000,desc:"The pink-elephant beer — spicy, complex, and full of surprises."},
+{name:"Duvel",type:"Strong Golden Ale",abv:8.5,region:"Antwerp",brewery:"Duvel Moortgat",personality:"achiever",img:"https://upload.wikimedia.org/wikipedia/commons/0/0d/Duvel_and_glass_sunday.jpg",lat:51.0583,lng:4.3153,desc:"The 'Devil' — golden, effervescent, and deceptively strong. Iconic."},
+{name:"Delirium Tremens",type:"Strong Golden Ale",abv:8.5,region:"East Flanders",brewery:"Brouwerij Huyghe",personality:"free-spirit",img:"",lat:51.0003,lng:3.8000,desc:"The pink-elephant beer — spicy, complex, and full of surprises."},
 {name:"La Chouffe",type:"Strong Blond Ale",abv:8.0,region:"Luxembourg",brewery:"Brasserie d'Achouffe",personality:"free-spirit",img:"",lat:50.1264,lng:5.7567,desc:"Brewed in the Ardennes with a gnome on the label. Unfiltered and earthy."},
 {name:"Gulden Draak",type:"Strong Dark Ale",abv:10.5,region:"East Flanders",brewery:"Van Steenberge",personality:"adventurer",img:"",lat:51.1439,lng:3.7258,desc:"The Golden Dragon — a beast at 10.5% with dark fruit and boozy warmth."},
 {name:"Pauwel Kwak",type:"Strong Amber Ale",abv:8.4,region:"East Flanders",brewery:"Bosteels Brewery",personality:"adventurer",img:"",lat:51.0175,lng:4.2047,desc:"Famous for its unique coachman's glass. Rich caramel, banana, warming spice."},
@@ -324,11 +369,11 @@ const beers=[
 {name:"Affligem Blond",type:"Abbey Blond",abv:6.8,region:"Flemish Brabant",brewery:"Brouwerij Affligem",personality:"diplomat",img:"",lat:50.9178,lng:4.1069,desc:"Dating back to 1074. Balanced, floral, and elegant."},
 {name:"St. Bernardus Abt 12",type:"Quadrupel",abv:10.0,region:"West Flanders",brewery:"St. Bernardus Brewery",personality:"thinker",img:"",lat:50.8556,lng:2.6500,desc:"Based on the Westvleteren recipe. Dark fruit, caramel, coffee, astonishing smoothness."},
 {name:"Tripel Karmeliet",type:"Tripel",abv:8.4,region:"East Flanders",brewery:"Bosteels Brewery",personality:"achiever",img:"",lat:51.0175,lng:4.2047,desc:"17th-century recipe using three grains. Creamy, complex, vanilla and banana."},
-{name:"Cantillon Gueuze",type:"Gueuze (Lambic)",abv:5.0,region:"Brussels",brewery:"Brasserie Cantillon",personality:"creative",img:"images/cantillon_gueuze.png",lat:50.8428,lng:4.3314,desc:"The gold standard of spontaneous fermentation. Tart, complex, funky."},
+{name:"Cantillon Gueuze",type:"Gueuze (Lambic)",abv:5.0,region:"Brussels",brewery:"Brasserie Cantillon",personality:"creative",img:"https://upload.wikimedia.org/wikipedia/commons/e/e0/Cantillon_gueze_bottles.png",lat:50.8428,lng:4.3314,desc:"The gold standard of spontaneous fermentation. Tart, complex, funky."},
 {name:"3 Fonteinen Oude Geuze",type:"Gueuze (Lambic)",abv:6.0,region:"Flemish Brabant",brewery:"3 Fonteinen",personality:"creative",img:"",lat:50.7628,lng:4.3006,desc:"A masterful blend of 1, 2, and 3-year-old lambics. Bone-dry, complex."},
 {name:"Boon Oude Geuze",type:"Gueuze (Lambic)",abv:8.0,region:"Flemish Brabant",brewery:"Brouwerij Boon",personality:"creative",img:"",lat:50.7074,lng:4.2338,desc:"'The Perfect Marriage' — intensely tart, oaky, dried apple and lemon."},
 {name:"Lindemans Kriek",type:"Fruit Lambic",abv:3.5,region:"Flemish Brabant",brewery:"Brouwerij Lindemans",personality:"social",img:"",lat:50.8014,lng:4.2292,desc:"Sweet cherry lambic. Bright red, fruity, and playful."},
-{name:"Hoegaarden",type:"Witbier",abv:4.9,region:"Flemish Brabant",brewery:"Brouwerij van Hoegaarden",personality:"social",img:"images/hoegaarden.png",lat:50.7700,lng:4.8833,desc:"Revived an entire style. Hazy, light, spiced with coriander and orange peel."},
+{name:"Hoegaarden",type:"Witbier",abv:4.9,region:"Flemish Brabant",brewery:"Brouwerij van Hoegaarden",personality:"social",img:"",lat:50.7700,lng:4.8833,desc:"Revived an entire style. Hazy, light, spiced with coriander and orange peel."},
 {name:"St. Bernardus Wit",type:"Witbier",abv:5.5,region:"West Flanders",brewery:"St. Bernardus Brewery",personality:"social",img:"",lat:50.8556,lng:2.6500,desc:"Craft Witbier with more body than typical examples. Creamy and herbal."},
 {name:"Blanche de Namur",type:"Witbier",abv:4.5,region:"Namur",brewery:"Brasserie du Bocq",personality:"social",img:"",lat:50.3336,lng:4.9589,desc:"Named after a 14th-century queen. Delicate, lemony, refreshing."},
 {name:"Rodenbach Grand Cru",type:"Flanders Red",abv:6.0,region:"West Flanders",brewery:"Brouwerij Rodenbach",personality:"adventurer",img:"",lat:50.9467,lng:3.1231,desc:"Aged 2 years in oak foeders. Red, tart, wine-like. The rebel of Belgian beer."},
@@ -344,34 +389,40 @@ const personalities={thinker:{label:"🧠 The Thinker"},creative:{label:"🎨 Th
 
 // ═══════════════════════════════════════
 //  BRUSSELS CAFES DATABASE (Top 20)
+//  sourceUrl: verify address, hours & beer list against this URL before publishing.
+//  verifiedDate: update whenever you re-check a cafe's info.
+//  NOTE: cafes in 1060/1020/1070 are Brussels Capital Region, not strictly 1000 centre.
 // ═══════════════════════════════════════
 const cafes=[
-{id:1,name:"Delirium Café",address:"Impasse de la Fidélité 4A, 1000 Brussels",lat:50.8489,lng:4.3537,desc:"Guinness World Record holder — 2000+ beers. A bucket-list destination for any beer lover.",beers:["Delirium Tremens","Chimay Blue","Chimay Red","Westmalle Tripel","Orval","Rochefort 10","Duvel","La Chouffe","Leffe Blond","Hoegaarden","Kwak","Gulden Draak","Cantillon Gueuze","Lindemans Kriek","Tripel Karmeliet","Stella Artois"]},
-{id:2,name:"Moeder Lambic Fontainas",address:"Place Fontainas 8, 1000 Brussels",lat:50.8458,lng:4.3465,desc:"The gold standard for craft beer in Brussels. 40+ taps focusing on lambics and artisanal Belgian brews.",beers:["Cantillon Gueuze","3 Fonteinen Oude Geuze","Boon Oude Geuze","Saison Dupont","Orval","Delirium Tremens","Rodenbach Grand Cru","Fantôme Saison","Duchesse de Bourgogne"]},
-{id:3,name:"Brasserie Cantillon",address:"Rue Gheude 56, 1070 Anderlecht",lat:50.8428,lng:4.3314,desc:"A legendary working lambic brewery-museum. Taste lambic straight from the source.",beers:["Cantillon Gueuze","Lindemans Kriek"]},
-{id:4,name:"À La Mort Subite",address:"Rue Montagne aux Herbes Potagères 7, 1000 Brussels",lat:50.8486,lng:4.3561,desc:"Historic café since 1910. Famous for its house Gueuze and Kriek served in a stunning Art Deco interior.",beers:["Lindemans Kriek","Hoegaarden","Leffe Blond","Leffe Brune","Stella Artois","Jupiler"]},
-{id:5,name:"Poechenellekelder",address:"Rue du Chêne 5, 1000 Brussels",lat:50.8449,lng:4.3499,desc:"Quirky puppet-themed tavern next to Manneken Pis. Extensive Trappist and Lambic selection.",beers:["Cantillon Gueuze","Chimay Blue","Chimay Red","Chimay Triple","Westmalle Dubbel","Westmalle Tripel","Orval","Rochefort 8","Rochefort 10","Westvleteren 12","Leffe Blond","Duvel","Tripel Karmeliet"]},
-{id:6,name:"Brussels Beer Project",address:"Rue Antoine Dansaert 188, 1000 Brussels",lat:50.8528,lng:4.3424,desc:"Leaders of Brussels' modern craft movement. Innovative experimental brews and collaborations.",beers:["Duvel","Delirium Tremens","Tripel Karmeliet","Saison Dupont","La Chouffe","Hoegaarden"]},
-{id:7,name:"Brasserie de la Senne",address:"Drève Anna Boch 19-21, 1000 Brussels",lat:50.8602,lng:4.3084,desc:"Highly respected local brewery driving the Brussels beer revival. Fresh, high-quality, drinkable ales.",beers:["Saison Dupont","Cantillon Gueuze","Duvel","Orval","Hoegaarden"]},
-{id:8,name:"Brasserie Surréaliste",address:"Place du Nouveau Marché aux Grains 22, 1000 Brussels",lat:50.8535,lng:4.3441,desc:"Stylish modern brewery-restaurant in the city center. Creative craft beers in a beautiful setting.",beers:["Duvel","La Chouffe","Tripel Karmeliet","Delirium Tremens","Chimay Blue","Hoegaarden"]},
-{id:9,name:"Beerstorming",address:"Chaussée d'Alsemberg 75, 1060 Saint-Gilles",lat:50.8296,lng:4.3429,desc:"Unique concept — brew your own beer while enjoying a great selection of craft brews.",beers:["Saison Dupont","Orval","Cantillon Gueuze","3 Fonteinen Oude Geuze","Duvel","Rodenbach Grand Cru"]},
-{id:10,name:"En Stoemelings",address:"Rue Dieudonné Lefèvre 37, 1020 Brussels",lat:50.8753,lng:4.3468,desc:"Cozy local brewery focused on artisanal Brussels beers. A true neighborhood gem.",beers:["Saison Dupont","Cantillon Gueuze","Hoegaarden","Jupiler","Stella Artois"]},
-{id:11,name:"À La Bécasse",address:"Rue de Tabora 11, 1000 Brussels",lat:50.8492,lng:4.3512,desc:"Historic brown café serving Lambic Doux in traditional ceramic jugs since 1877.",beers:["Lindemans Kriek","Hoegaarden","Leffe Blond","Jupiler","Stella Artois"]},
-{id:12,name:"La Fleur en Papier Doré",address:"Rue des Alexiens 55, 1000 Brussels",lat:50.8432,lng:4.3486,desc:"Legendary café once frequented by Surrealists like René Magritte. Dripping with history.",beers:["Chimay Blue","Chimay Red","Orval","Westmalle Tripel","Duvel","Leffe Blond","Rochefort 8","Cantillon Gueuze"]},
-{id:13,name:"Au Daringman",address:"Rue de Flandre 37, 1000 Brussels",lat:50.8519,lng:4.3448,desc:"Classic unpretentious 'brown café' — authentic local experience away from tourist tracks.",beers:["Chimay Red","Duvel","Leffe Blond","Leffe Brune","Jupiler","Stella Artois","Hoegaarden"]},
-{id:14,name:"Brasserie Verschueren",address:"Parvis de Saint-Gilles 11-13, 1060 Saint-Gilles",lat:50.8310,lng:4.3470,desc:"Local institution in vibrant Saint-Gilles. Fantastic terrace and classic atmosphere.",beers:["Duvel","Chimay Blue","Orval","Westmalle Tripel","Saison Dupont","Jupiler","Stella Artois","La Chouffe"]},
-{id:15,name:"Beer Capital",address:"Rue de la Bourse 29, 1000 Brussels",lat:50.8485,lng:4.3490,desc:"Near the old Stock Exchange. Wide selection, friendly staff, and big screens for sports.",beers:["Duvel","Delirium Tremens","Chimay Blue","Tripel Karmeliet","Kwak","Leffe Blond","Jupiler","Hoegaarden","La Chouffe","Gulden Draak"]},
-{id:16,name:"Little Delirium",address:"Impasse de la Fidélité 4, 1000 Brussels",lat:50.8488,lng:4.3535,desc:"Smaller and more relaxed alternative to the main Delirium Café. Same excellent selection.",beers:["Delirium Tremens","Duvel","Chimay Blue","La Chouffe","Tripel Karmeliet","Hoegaarden","Kwak"]},
-{id:17,name:"La Porte Noire",address:"Rue des Alexiens 67, 1000 Brussels",lat:50.8428,lng:4.3479,desc:"Atmospheric cellar bar in a historic building. Great whiskies and excellent Belgian beer list.",beers:["Chimay Blue","Rochefort 10","Orval","Westmalle Tripel","Duvel","Cantillon Gueuze","Rodenbach Grand Cru","St. Bernardus Abt 12"]},
-{id:18,name:"Bier Circus",address:"Rue de l'Enseignement 57, 1000 Brussels",lat:50.8522,lng:4.3642,desc:"Comprehensive Belgian beer list with expert food pairings. A beer education destination.",beers:["Chimay Blue","Chimay Red","Westmalle Dubbel","Westmalle Tripel","Orval","Rochefort 8","Rochefort 10","Duvel","Rodenbach Grand Cru","Duchesse de Bourgogne","Saison Dupont","Cantillon Gueuze","3 Fonteinen Oude Geuze"]},
-{id:19,name:"GIST",address:"Place de la Vieille Halle aux Blés 30, 1000 Brussels",lat:50.8450,lng:4.3530,desc:"Focused, high-quality craft beer bar. Curated selection for discerning beer lovers.",beers:["Cantillon Gueuze","3 Fonteinen Oude Geuze","Saison Dupont","Orval","Rodenbach Grand Cru","Fantôme Saison","Duvel"]},
-{id:20,name:"Chez Moeder Lambic (Original)",address:"Rue de Savoie 68, 1060 Saint-Gilles",lat:50.8250,lng:4.3500,desc:"The original Moeder Lambic. More intimate than Fontainas, equally impressive beer list.",beers:["Cantillon Gueuze","3 Fonteinen Oude Geuze","Boon Oude Geuze","Orval","Saison Dupont","Rodenbach Grand Cru","Duchesse de Bourgogne","Fantôme Saison"]},
+{id:1,name:"Delirium Café",address:"Impasse de la Fidélité 4A, 1000 Brussels",lat:50.8489,lng:4.3537,sourceUrl:"https://www.deliriumcafe.be/",verifiedDate:"2026-04",desc:"Guinness World Record holder — 2000+ beers. A bucket-list destination for any beer lover.",beers:["Delirium Tremens","Chimay Blue","Chimay Red","Westmalle Tripel","Orval","Rochefort 10","Duvel","La Chouffe","Leffe Blond","Hoegaarden","Pauwel Kwak","Gulden Draak","Cantillon Gueuze","Lindemans Kriek","Tripel Karmeliet","Stella Artois"]},
+{id:2,name:"Moeder Lambic Fontainas",address:"Place Fontainas 8, 1000 Brussels",lat:50.8458,lng:4.3465,sourceUrl:"https://www.moederlambic.com/",verifiedDate:"2026-04",desc:"The gold standard for craft beer in Brussels. 40+ taps focusing on lambics and artisanal Belgian brews.",beers:["Cantillon Gueuze","3 Fonteinen Oude Geuze","Boon Oude Geuze","Saison Dupont","Orval","Delirium Tremens","Rodenbach Grand Cru","Fantôme Saison","Duchesse de Bourgogne"]},
+{id:3,name:"Brasserie Cantillon",address:"Rue Gheude 56, 1070 Anderlecht",lat:50.8428,lng:4.3314,sourceUrl:"https://www.cantillon.be/",verifiedDate:"2026-04",desc:"A legendary working lambic brewery-museum. Taste lambic straight from the source.",beers:["Cantillon Gueuze","Lindemans Kriek"]},
+{id:4,name:"À La Mort Subite",address:"Rue Montagne aux Herbes Potagères 7, 1000 Brussels",lat:50.8486,lng:4.3561,sourceUrl:"https://www.alamortsubite.com/",verifiedDate:"2026-04",desc:"Historic café since 1910. Famous for its house Gueuze and Kriek served in a stunning Art Deco interior.",beers:["Lindemans Kriek","Hoegaarden","Leffe Blond","Leffe Brune","Stella Artois","Jupiler"]},
+{id:5,name:"Poechenellekelder",address:"Rue du Chêne 5, 1000 Brussels",lat:50.8449,lng:4.3499,sourceUrl:"https://maps.google.com/?q=Poechenellekelder+Brussels",verifiedDate:"2026-04",desc:"Quirky puppet-themed tavern next to Manneken Pis. Extensive Trappist and Lambic selection.",beers:["Cantillon Gueuze","Chimay Blue","Chimay Red","Chimay Triple","Westmalle Dubbel","Westmalle Tripel","Orval","Rochefort 8","Rochefort 10","Westvleteren 12","Leffe Blond","Duvel","Tripel Karmeliet"]},
+{id:6,name:"Brussels Beer Project",address:"Rue Antoine Dansaert 188, 1000 Brussels",lat:50.8528,lng:4.3424,sourceUrl:"https://beerproject.be/",verifiedDate:"2026-04",desc:"Leaders of Brussels' modern craft movement. Innovative experimental brews and collaborations.",beers:["Duvel","Delirium Tremens","Tripel Karmeliet","Saison Dupont","La Chouffe","Hoegaarden"]},
+{id:7,name:"Brasserie de la Senne",address:"Drève Anna Boch 19-21, 1020 Brussels",lat:50.8602,lng:4.3084,sourceUrl:"https://www.brasseriedelasenne.be/",verifiedDate:"2026-04",desc:"Highly respected local brewery driving the Brussels beer revival. Fresh, high-quality, drinkable ales.",beers:["Saison Dupont","Cantillon Gueuze","Duvel","Orval","Hoegaarden"]},
+{id:8,name:"Brasserie Surréaliste",address:"Place du Nouveau Marché aux Grains 22, 1000 Brussels",lat:50.8535,lng:4.3441,sourceUrl:"https://maps.google.com/?q=Brasserie+Surrealiste+Brussels",verifiedDate:"2026-04",desc:"Stylish modern brewery-restaurant in the city center. Creative craft beers in a beautiful setting.",beers:["Duvel","La Chouffe","Tripel Karmeliet","Delirium Tremens","Chimay Blue","Hoegaarden"]},
+{id:9,name:"Beerstorming",address:"Chaussée d'Alsemberg 75, 1060 Saint-Gilles",lat:50.8296,lng:4.3429,sourceUrl:"https://maps.google.com/?q=Beerstorming+Brussels",verifiedDate:"2026-04",desc:"Unique concept — brew your own beer while enjoying a great selection of craft brews.",beers:["Saison Dupont","Orval","Cantillon Gueuze","3 Fonteinen Oude Geuze","Duvel","Rodenbach Grand Cru"]},
+{id:10,name:"En Stoemelings",address:"Rue Dieudonné Lefèvre 37, 1020 Brussels",lat:50.8753,lng:4.3468,sourceUrl:"https://maps.google.com/?q=En+Stoemelings+Brussels",verifiedDate:"2026-04",desc:"Cozy local brewery focused on artisanal Brussels beers. A true neighborhood gem.",beers:["Saison Dupont","Cantillon Gueuze","Hoegaarden","Jupiler","Stella Artois"]},
+{id:11,name:"À La Bécasse",address:"Rue de Tabora 11, 1000 Brussels",lat:50.8492,lng:4.3512,sourceUrl:"https://maps.google.com/?q=A+La+Becasse+Brussels",verifiedDate:"2026-04",desc:"Historic brown café serving Lambic Doux in traditional ceramic jugs since 1877.",beers:["Lindemans Kriek","Hoegaarden","Leffe Blond","Jupiler","Stella Artois"]},
+{id:12,name:"La Fleur en Papier Doré",address:"Rue des Alexiens 55, 1000 Brussels",lat:50.8432,lng:4.3486,sourceUrl:"https://www.lafleurenpapier.be/",verifiedDate:"2026-04",desc:"Legendary café once frequented by Surrealists like René Magritte. Dripping with history.",beers:["Chimay Blue","Chimay Red","Orval","Westmalle Tripel","Duvel","Leffe Blond","Rochefort 8","Cantillon Gueuze"]},
+{id:13,name:"Au Daringman",address:"Rue de Flandre 37, 1000 Brussels",lat:50.8519,lng:4.3448,sourceUrl:"https://maps.google.com/?q=Au+Daringman+Brussels",verifiedDate:"2026-04",desc:"Classic unpretentious 'brown café' — authentic local experience away from tourist tracks.",beers:["Chimay Red","Duvel","Leffe Blond","Leffe Brune","Jupiler","Stella Artois","Hoegaarden"]},
+{id:14,name:"Brasserie Verschueren",address:"Parvis de Saint-Gilles 11-13, 1060 Saint-Gilles",lat:50.8310,lng:4.3470,sourceUrl:"https://www.brasserie-verschueren.be/",verifiedDate:"2026-04",desc:"Local institution in vibrant Saint-Gilles. Fantastic terrace and classic atmosphere.",beers:["Duvel","Chimay Blue","Orval","Westmalle Tripel","Saison Dupont","Jupiler","Stella Artois","La Chouffe"]},
+{id:15,name:"Beer Capital",address:"Rue de la Bourse 29, 1000 Brussels",lat:50.8485,lng:4.3490,sourceUrl:"https://maps.google.com/?q=Beer+Capital+Brussels",verifiedDate:"2026-04",desc:"Near the old Stock Exchange. Wide selection, friendly staff, and big screens for sports.",beers:["Duvel","Delirium Tremens","Chimay Blue","Tripel Karmeliet","Pauwel Kwak","Leffe Blond","Jupiler","Hoegaarden","La Chouffe","Gulden Draak"]},
+{id:16,name:"Little Delirium",address:"Impasse de la Fidélité 4, 1000 Brussels",lat:50.8488,lng:4.3535,sourceUrl:"https://www.deliriumvillage.com/",verifiedDate:"2026-04",desc:"Smaller and more relaxed alternative to the main Delirium Café. Same excellent selection.",beers:["Delirium Tremens","Duvel","Chimay Blue","La Chouffe","Tripel Karmeliet","Hoegaarden","Pauwel Kwak"]},
+{id:17,name:"La Porte Noire",address:"Rue des Alexiens 67, 1000 Brussels",lat:50.8428,lng:4.3479,sourceUrl:"https://www.laporteno ire.be/",verifiedDate:"2026-04",desc:"Atmospheric cellar bar in a historic building. Great whiskies and excellent Belgian beer list.",beers:["Chimay Blue","Rochefort 10","Orval","Westmalle Tripel","Duvel","Cantillon Gueuze","Rodenbach Grand Cru","St. Bernardus Abt 12"]},
+{id:18,name:"Bier Circus",address:"Rue de l'Enseignement 57, 1000 Brussels",lat:50.8522,lng:4.3642,sourceUrl:"https://www.bier-circus.be/",verifiedDate:"2026-04",desc:"Comprehensive Belgian beer list with expert food pairings. A beer education destination.",beers:["Chimay Blue","Chimay Red","Westmalle Dubbel","Westmalle Tripel","Orval","Rochefort 8","Rochefort 10","Duvel","Rodenbach Grand Cru","Duchesse de Bourgogne","Saison Dupont","Cantillon Gueuze","3 Fonteinen Oude Geuze"]},
+{id:19,name:"GIST",address:"Place de la Vieille Halle aux Blés 30, 1000 Brussels",lat:50.8450,lng:4.3530,sourceUrl:"https://maps.google.com/?q=GIST+bar+Brussels",verifiedDate:"2026-04",desc:"Focused, high-quality craft beer bar. Curated selection for discerning beer lovers.",beers:["Cantillon Gueuze","3 Fonteinen Oude Geuze","Saison Dupont","Orval","Rodenbach Grand Cru","Fantôme Saison","Duvel"]},
+{id:20,name:"Chez Moeder Lambic (Original)",address:"Rue de Savoie 68, 1060 Saint-Gilles",lat:50.8250,lng:4.3500,sourceUrl:"https://www.moederlambic.com/",verifiedDate:"2026-04",desc:"The original Moeder Lambic. More intimate than Fontainas, equally impressive beer list.",beers:["Cantillon Gueuze","3 Fonteinen Oude Geuze","Boon Oude Geuze","Orval","Saison Dupont","Rodenbach Grand Cru","Duchesse de Bourgogne","Fantôme Saison"]},
 ];
 
 // ═══════════════════════════════════════
-//  TRENDING BEERS (Untappd-based)
+//  TRENDING BEERS (Untappd — updated weekly via GitHub Actions)
+//  Source file: data/trending.json
+//  To set up auto-update: register at https://untappd.com/api/register
+//  then add UNTAPPD_CLIENT_ID and UNTAPPD_CLIENT_SECRET to GitHub repo secrets.
 // ═══════════════════════════════════════
-const trending=[
+const FALLBACK_TRENDING=[
   {rank:1,name:"Westvleteren 12",style:"Trappist Quad",rating:4.62,checkins:"12.4K"},
   {rank:2,name:"Cantillon Gueuze",style:"Lambic - Gueuze",rating:4.35,checkins:"9.8K"},
   {rank:3,name:"Rochefort 10",style:"Trappist Quad",rating:4.31,checkins:"11.1K"},
@@ -382,8 +433,10 @@ const trending=[
 // ═══════════════════════════════════════
 //  RENDER FUNCTIONS
 // ═══════════════════════════════════════
-function renderTrending(){
-  document.getElementById('trending-list').innerHTML=trending.map(t=>`
+function renderTrending(list,lastUpdated){
+  const label=lastUpdated?`updated ${lastUpdated}`:'static fallback';
+  document.querySelector('.trending-bar h2 span').textContent=`(via Untappd · ${label})`;
+  document.getElementById('trending-list').innerHTML=list.map(t=>`
     <div class="trending-card">
       <span class="trending-rank">${t.rank}</span>
       <h4>${t.name}</h4>
@@ -391,11 +444,17 @@ function renderTrending(){
       <div class="t-rating">⭐ ${t.rating} · ${t.checkins} check-ins</div>
     </div>`).join('');
 }
+function loadTrending(){
+  fetch('data/trending.json')
+    .then(r=>{if(!r.ok)throw new Error();return r.json()})
+    .then(d=>renderTrending(d.beers||d,d.last_updated||null))
+    .catch(()=>renderTrending(FALLBACK_TRENDING,null));
+}
 
 function renderBeers(list){
   const grid=document.getElementById('beer-grid');
   grid.innerHTML=list.map(b=>`
-    <div class="beer-card" onclick="onBeerClick('${b.name.replace(/'/g,"\\'")}')">
+    <div class="beer-card" data-beer="${b.name.replace(/"/g,'&quot;')}">
       ${makeBeerVisual(b,200)}
       <div class="beer-card-body">
         <h3>${b.name}</h3>
@@ -473,7 +532,7 @@ function renderCafes(){
       <div class="cafe-desc">${c.desc}</div>
       <div class="cafe-beers-title">Beers served</div>
       <div class="cafe-beer-tags">
-        ${c.beers.map(b=>`<span class="cafe-beer-tag" onclick="event.stopPropagation();onBeerClick('${b.replace(/'/g,"\\'")}')">${b}</span>`).join('')}
+        ${c.beers.map(b=>`<span class="cafe-beer-tag" data-beer="${b.replace(/"/g,'&quot;')}">${b}</span>`).join('')}
       </div>
     </div>`}).join('');
 }
@@ -492,20 +551,123 @@ function getUserLocation(){
     btn.textContent='📍 Location Set ✓';
     renderCafes();
   },err=>{
-    document.getElementById('location-info').textContent='📍 Using Brussels center as default (location unavailable on file:// URLs — try serving via localhost)';
+    const isHTTPS=window.location.protocol==='https:';
+    document.getElementById('location-info').textContent=isHTTPS
+      ?'📍 Location access denied. Click "Allow" in your browser to sort cafés by distance.'
+      :'📍 Location requires HTTPS. Distances shown from Brussels center.';
     btn.textContent='📍 Using Brussels Center';btn.disabled=false;
     renderCafes();
   },{timeout:5000});
 }
 
-// Click beer → find nearest cafe → open Google Maps directly
+// ═══════════════════════════════════════
+//  BEER DETAIL MODAL
+// ═══════════════════════════════════════
+let currentDetailBeer=null;
+
 function onBeerClick(beerName){
+  const beer=beers.find(b=>b.name===beerName);
+  if(!beer)return;
+  currentDetailBeer=beer;
+  document.getElementById('beer-detail-visual').innerHTML=makeBeerVisual(beer,220);
+  document.getElementById('beer-detail-name').textContent=beer.name;
+  document.getElementById('beer-detail-meta').innerHTML=`<span class="beer-meta-tag type">${beer.type}</span><span class="beer-meta-tag abv">${beer.abv}% ABV</span><span class="beer-meta-tag region">📍 ${beer.region}</span><span class="personality-tag">${personalities[beer.personality].label}</span>`;
+  document.getElementById('beer-detail-desc').textContent=beer.desc;
   const serving=cafes.filter(c=>c.beers.some(b=>b.toLowerCase()===beerName.toLowerCase()));
-  if(!serving.length){alert(`No Brussels café in our database serves "${beerName}" yet.`);return}
-  const sorted=[...serving].sort((a,b)=>haversine(userLat,userLng,a.lat,a.lng)-haversine(userLat,userLng,b.lat,b.lng));
-  const nearest=sorted[0];
-  // Open Google Maps directions directly
-  window.open(`https://www.google.com/maps/dir/?api=1&destination=${nearest.lat},${nearest.lng}&destination_place_id=&travelmode=walking`,'_blank');
+  document.getElementById('beer-detail-find-btn').style.display=serving.length?'':'none';
+  const overlay=document.getElementById('beer-detail-overlay');
+  const card=document.getElementById('beer-detail-card');
+  overlay.classList.add('show');
+  card.style.display='block';card.style.animation='none';card.offsetHeight;card.style.animation='';
+}
+
+function findNearestForDetailBeer(){
+  if(!currentDetailBeer)return;
+  closeBeerDetail();
+  setTimeout(()=>{
+    const beerName=currentDetailBeer.name;
+    const serving=cafes.filter(c=>c.beers.some(b=>b.toLowerCase()===beerName.toLowerCase()));
+    if(!serving.length)return;
+    const sorted=[...serving].sort((a,b)=>haversine(userLat,userLng,a.lat,a.lng)-haversine(userLat,userLng,b.lat,b.lng));
+    const nearest=sorted[0];
+    const dist=haversine(userLat,userLng,nearest.lat,nearest.lng);
+    document.getElementById('near-beer-name').textContent=`Looking for: ${beerName}`;
+    document.getElementById('near-cafe-name').textContent=nearest.name;
+    document.getElementById('near-address').textContent=nearest.address;
+    document.getElementById('near-dist').textContent=dist<1?`${(dist*1000).toFixed(0)}m away`:`${dist.toFixed(1)}km away`;
+    document.getElementById('near-map-link').href=`https://www.google.com/maps/dir/?api=1&destination=${nearest.lat},${nearest.lng}&travelmode=walking`;
+    document.getElementById('nearest-overlay').classList.add('show');
+  },200);
+}
+
+function closeBeerDetail(){
+  document.getElementById('beer-detail-overlay').classList.remove('show');
+  document.getElementById('beer-detail-card').style.display='none';
+}
+
+// ═══════════════════════════════════════
+//  NIGHT SHOPS
+// ═══════════════════════════════════════
+// Night shops data loaded lazily from data/night-shops.json on first toggle.
+// To populate that file: run the Overpass query at https://overpass-turbo.eu/
+// Query for central Brussels (postcode 1000):
+//   [out:json][timeout:25];
+//   area["name"="City of Brussels"]["admin_level"="8"]->.brussels;
+//   ( node["shop"="convenience"]["name"~"[Nn]ight|[Nn]acht",i](area.brussels);
+//     node["shop"="night_shop"](area.brussels);
+//     node["shop"="alcohol"](area.brussels); );
+//   out body;
+// Export JSON, clean up, and paste into data/night-shops.json following the schema below.
+let nightShopsData=null;
+let nightShopsVisible=false;
+let nightShopMapLayer=null;
+
+function toggleNightShops(){
+  nightShopsVisible=!nightShopsVisible;
+  const btn=document.getElementById('nightshops-toggle');
+  btn.classList.toggle('active',nightShopsVisible);
+  if(nightShopsVisible&&nightShopsData===null){
+    fetch('data/night-shops.json')
+      .then(r=>r.json())
+      .then(data=>{nightShopsData=data;renderNightShops();updateNightShopMapMarkers()})
+      .catch(()=>{nightShopsData=[];renderNightShops()});
+  }else{
+    renderNightShops();
+    updateNightShopMapMarkers();
+  }
+}
+
+function renderNightShops(){
+  const section=document.getElementById('night-shops-section');
+  const grid=document.getElementById('night-shops-grid');
+  if(!nightShopsVisible){section.style.display='none';return}
+  section.style.display='block';
+  if(!nightShopsData||nightShopsData.length===0){
+    grid.innerHTML=`<p style="color:var(--text-muted);font-size:.9rem">No night shop data loaded yet. See the instructions in <code>data/night-shops.json</code> to add data via the OpenStreetMap Overpass API.</p>`;
+    return;
+  }
+  const list=[...nightShopsData].sort((a,b)=>haversine(userLat,userLng,a.lat,a.lng)-haversine(userLat,userLng,b.lat,b.lng));
+  grid.innerHTML=list.map(s=>{
+    const dist=haversine(userLat,userLng,s.lat,s.lng);
+    return`<div class="night-shop-card">
+      <h3>🌙 ${s.name}</h3>
+      <div class="ns-address">📍 ${s.address}</div>
+      ${s.opening_hours?`<span class="ns-hours">🕐 ${s.opening_hours}</span>`:''}
+      <div style="color:var(--text-muted);font-size:.74rem;margin-top:4px">📏 ${dist<1?(dist*1000).toFixed(0)+'m':dist.toFixed(1)+'km'} ${hasRealLocation?'from you':'from center'} · <a href="https://www.openstreetmap.org/node/${s.id.replace('osm-','')}" target="_blank" rel="noopener" style="color:var(--text-dim)">OSM</a></div>
+    </div>`;
+  }).join('');
+}
+
+function updateNightShopMapMarkers(){
+  if(!beerMap||!mapInit)return;
+  if(nightShopMapLayer){beerMap.removeLayer(nightShopMapLayer);nightShopMapLayer=null}
+  if(!nightShopsVisible||!nightShopsData||!nightShopsData.length)return;
+  nightShopMapLayer=L.layerGroup();
+  nightShopsData.forEach(s=>{
+    const icon=L.divIcon({className:'',html:`<div style="width:24px;height:24px;background:#8b5cf6;border:2px solid rgba(255,255,255,0.9);border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer" onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'">🌙</div>`,iconSize:[24,24],iconAnchor:[12,12]});
+    L.marker([s.lat,s.lng],{icon}).bindPopup(`<div class="popup-brewery">${s.name}</div><div style="color:var(--text-dim);font-size:.75rem">${s.address}</div>${s.opening_hours?`<div style="color:#c084fc;font-size:.75rem;margin-top:4px">🕐 ${s.opening_hours}</div>`:''}`).addTo(nightShopMapLayer);
+  });
+  nightShopMapLayer.addTo(beerMap);
 }
 
 // ═══════════════════════════════════════
@@ -544,8 +706,10 @@ function initMap(){
   });
 
   const legend=L.control({position:'bottomright'});
-  legend.onAdd=function(){const d=L.DomUtil.create('div','map-legend');d.innerHTML=`<h4>Legend</h4><div class="map-legend-item"><span class="map-legend-dot" style="background:#a78bfa"></span> Trappist Brewery</div><div class="map-legend-item"><span class="map-legend-dot" style="background:#fbbf24"></span> Strong Ale Brewery</div><div class="map-legend-item"><span class="map-legend-dot" style="background:#f472b6"></span> Lambic Brewery</div><div class="map-legend-item"><span class="map-legend-dot" style="background:#3b82f6"></span> Brussels Café</div>`;return d};
+  legend.onAdd=function(){const d=L.DomUtil.create('div','map-legend');d.innerHTML=`<h4>Legend</h4><div class="map-legend-item"><span class="map-legend-dot" style="background:#a78bfa"></span> Trappist Brewery</div><div class="map-legend-item"><span class="map-legend-dot" style="background:#fbbf24"></span> Strong Ale Brewery</div><div class="map-legend-item"><span class="map-legend-dot" style="background:#f472b6"></span> Lambic Brewery</div><div class="map-legend-item"><span class="map-legend-dot" style="background:#3b82f6"></span> Brussels Café</div><div class="map-legend-item"><span class="map-legend-dot" style="background:#8b5cf6"></span> Night Shop</div>`;return d};
   legend.addTo(beerMap);
+  // Add night shop markers if already loaded
+  if(nightShopsVisible&&nightShopsData)updateNightShopMapMarkers();
 }
 
 // ═══════════════════════════════════════
@@ -559,7 +723,7 @@ document.getElementById('nav-tabs').addEventListener('click',e=>{
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById(tab).classList.add('active');
   e.target.classList.add('active');
-  if(tab==='map-section')setTimeout(()=>{initMap();if(beerMap)beerMap.invalidateSize()},100);
+  if(tab==='map-section')setTimeout(()=>{initMap();if(beerMap){beerMap.invalidateSize();updateNightShopMapMarkers()}},100);
 });
 
 // ═══════════════════════════════════════
@@ -618,9 +782,29 @@ function getResult(){
 function retakeQuiz(){Object.keys(quizA).forEach(k=>delete quizA[k]);document.querySelectorAll('.quiz-option').forEach(o=>o.classList.remove('selected'));document.getElementById('quiz-result').classList.remove('show');document.getElementById('quiz-progress-bar').style.width='0%';window.scrollTo({top:0,behavior:'smooth'})}
 
 // ═══════════════════════════════════════
+//  EVENT DELEGATION
+// ═══════════════════════════════════════
+// Beer grid: click anywhere on a card triggers beer detail modal
+document.getElementById('beer-grid').addEventListener('click',e=>{
+  const card=e.target.closest('[data-beer]');
+  if(card)onBeerClick(card.dataset.beer);
+});
+// Cafe tab: clicking a beer tag triggers beer detail modal
+document.getElementById('cafe-grid').addEventListener('click',e=>{
+  const tag=e.target.closest('.cafe-beer-tag[data-beer]');
+  if(tag){e.stopPropagation();onBeerClick(tag.dataset.beer);}
+});
+// Beer detail overlay: backdrop click closes modal
+document.getElementById('beer-detail-overlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('beer-detail-overlay'))closeBeerDetail();
+});
+// Beer detail overlay: "Find Nearest Café" button
+document.getElementById('beer-detail-find-btn').addEventListener('click',findNearestForDetailBeer);
+
+// ═══════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════
-populateFilters();renderBeers(beers);renderRegions();renderQuiz();renderTrending();renderCafes();
+populateFilters();renderBeers(beers);renderRegions();renderQuiz();loadTrending();renderCafes();
 </script>
 </body>
 </html>
