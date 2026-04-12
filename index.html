@@ -210,7 +210,8 @@
   <button class="tab-btn" data-tab="cafes">Brussels Cafés</button>
   <button class="tab-btn" data-tab="map-section">Map</button>
   <button class="tab-btn" data-tab="regions">By Region</button>
-  <button class="tab-btn" data-tab="quiz">Find Your Beer</button>
+  <!-- Quiz tab hidden for now -->
+  <!-- <button class="tab-btn" data-tab="quiz">Find Your Beer</button> -->
   <button class="tab-btn lucky" id="lucky-btn">🎲 Feeling Lucky</button>
 </nav>
 
@@ -225,7 +226,8 @@
     <label>Filter:</label>
     <select id="filter-type"><option value="">All Types</option></select>
     <select id="filter-region"><option value="">All Regions</option></select>
-    <select id="filter-personality"><option value="">All Personalities</option></select>
+    <!-- Personality filter disabled -->
+    <select id="filter-personality" style="display:none"><option value="">All Personalities</option></select>
     <input type="text" id="filter-search" placeholder="Search beer name…">
   </div>
   <div class="stats-bar">Showing <span id="beer-count">0</span> beers</div>
@@ -255,6 +257,16 @@
 
 <!-- ═══════ MAP ═══════ -->
 <section id="map-section" class="section">
+  <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:8px 0 16px">
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
+      <span style="color:var(--text-muted);font-size:0.82rem;font-weight:500">🌙 Night Shops</span>
+      <div class="toggle-switch" id="map-nightshop-toggle" onclick="toggleMapNightShops()">
+        <div class="toggle-track" style="width:40px;height:22px;border-radius:11px;background:var(--surface2);border:1px solid var(--border);position:relative;transition:background .3s,border-color .3s;cursor:pointer">
+          <div class="toggle-knob" style="width:16px;height:16px;border-radius:50%;background:var(--text-muted);position:absolute;top:2px;left:2px;transition:transform .3s,background .3s"></div>
+        </div>
+      </div>
+    </label>
+  </div>
   <div class="map-wrapper"><div id="beer-map"></div></div>
 </section>
 
@@ -350,39 +362,39 @@ const beers=[
 // To find more Wikipedia Commons images: visit https://commons.wikimedia.org/w/index.php?search=[beer+name]
 // and copy the URL from the "Original file" link. Use https://upload.wikimedia.org/... format.
 {name:"Chimay Blue",type:"Trappist",abv:9.0,region:"Hainaut",brewery:"Abbaye de Scourmont",personality:"thinker",img:"https://upload.wikimedia.org/wikipedia/commons/0/0c/Chimay_bleu.jpg",lat:50.0589,lng:4.3125,desc:"A world-class dark Trappist ale. Deep caramel, dark fruit, and spice. Brewed by monks since 1862."},
-{name:"Chimay Red",type:"Trappist",abv:7.0,region:"Hainaut",brewery:"Abbaye de Scourmont",personality:"nurturer",img:"",lat:50.0589,lng:4.3125,desc:"The original Chimay — warm, coppery-brown, with rich fruit and gentle bitterness."},
+{name:"Chimay Red",type:"Trappist",abv:7.0,region:"Hainaut",brewery:"Abbaye de Scourmont",personality:"nurturer",img:"images/chimay-red.png",lat:50.0589,lng:4.3125,desc:"The original Chimay — warm, coppery-brown, with rich fruit and gentle bitterness."},
 {name:"Chimay Triple",type:"Trappist Tripel",abv:8.0,region:"Hainaut",brewery:"Abbaye de Scourmont",personality:"achiever",img:"https://upload.wikimedia.org/wikipedia/commons/2/26/Chimay_triple.jpg",lat:50.0589,lng:4.3125,desc:"Bright golden Trappist. Dry bitter notes, citrus, and white pepper."},
-{name:"Westmalle Dubbel",type:"Trappist Dubbel",abv:7.0,region:"Antwerp",brewery:"Abdij van Westmalle",personality:"nurturer",img:"",lat:51.2897,lng:4.6697,desc:"The archetype of the Dubbel style — rich malt, dark fruit, caramel, and chocolate."},
-{name:"Westmalle Tripel",type:"Trappist Tripel",abv:9.5,region:"Antwerp",brewery:"Abdij van Westmalle",personality:"achiever",img:"",lat:51.2897,lng:4.6697,desc:"The original Tripel — golden, complex, and dangerously drinkable at 9.5%."},
+{name:"Westmalle Dubbel",type:"Trappist Dubbel",abv:7.0,region:"Antwerp",brewery:"Abdij van Westmalle",personality:"nurturer",img:"images/westmalle-dubbel.png",lat:51.2897,lng:4.6697,desc:"The archetype of the Dubbel style — rich malt, dark fruit, caramel, and chocolate."},
+{name:"Westmalle Tripel",type:"Trappist Tripel",abv:9.5,region:"Antwerp",brewery:"Abdij van Westmalle",personality:"achiever",img:"images/westmalle-tripel.png",lat:51.2897,lng:4.6697,desc:"The original Tripel — golden, complex, and dangerously drinkable at 9.5%."},
 {name:"Westvleteren 12",type:"Trappist",abv:10.2,region:"West Flanders",brewery:"Sint-Sixtusabdij",personality:"thinker",img:"https://upload.wikimedia.org/wikipedia/commons/c/cc/Westvleteren_XII.JPG",lat:50.8956,lng:2.7225,desc:"Often called the best beer in the world. Incredibly rare. Dark fruit and profound complexity."},
-{name:"Westvleteren Blond",type:"Trappist",abv:5.8,region:"West Flanders",brewery:"Sint-Sixtusabdij",personality:"diplomat",img:"",lat:50.8956,lng:2.7225,desc:"The lightest Westvleteren — crisp, hoppy, and elegant."},
+{name:"Westvleteren Blond",type:"Trappist",abv:5.8,region:"West Flanders",brewery:"Sint-Sixtusabdij",personality:"diplomat",img:"images/westvleteren-blond.png",lat:50.8956,lng:2.7225,desc:"The lightest Westvleteren — crisp, hoppy, and elegant."},
 {name:"Orval",type:"Trappist",abv:6.2,region:"Luxembourg",brewery:"Abbaye d'Orval",personality:"creative",img:"https://upload.wikimedia.org/wikipedia/commons/3/3e/Orval_beer_and_glass.jpg",lat:49.6378,lng:5.3478,desc:"Unique — dry-hopped and Brettanomyces-fermented. Funky, herbal, evolving."},
-{name:"Rochefort 10",type:"Trappist",abv:11.3,region:"Namur",brewery:"Abbaye de Saint-Rémy",personality:"thinker",img:"",lat:50.1608,lng:5.2217,desc:"Pure liquid luxury at 11.3%. Dark chocolate, ripe fig, port wine."},
-{name:"Rochefort 8",type:"Trappist",abv:9.2,region:"Namur",brewery:"Abbaye de Saint-Rémy",personality:"thinker",img:"",lat:50.1608,lng:5.2217,desc:"Dark, complex, and brooding with fig, date, and chocolate notes."},
+{name:"Rochefort 10",type:"Trappist",abv:11.3,region:"Namur",brewery:"Abbaye de Saint-Rémy",personality:"thinker",img:"images/rochefort-10.png",lat:50.1608,lng:5.2217,desc:"Pure liquid luxury at 11.3%. Dark chocolate, ripe fig, port wine."},
+{name:"Rochefort 8",type:"Trappist",abv:9.2,region:"Namur",brewery:"Abbaye de Saint-Rémy",personality:"thinker",img:"images/rochefort-8.png",lat:50.1608,lng:5.2217,desc:"Dark, complex, and brooding with fig, date, and chocolate notes."},
 {name:"Duvel",type:"Strong Golden Ale",abv:8.5,region:"Antwerp",brewery:"Duvel Moortgat",personality:"achiever",img:"https://upload.wikimedia.org/wikipedia/commons/0/0d/Duvel_and_glass_sunday.jpg",lat:51.0583,lng:4.3153,desc:"The 'Devil' — golden, effervescent, and deceptively strong. Iconic."},
-{name:"Delirium Tremens",type:"Strong Golden Ale",abv:8.5,region:"East Flanders",brewery:"Brouwerij Huyghe",personality:"free-spirit",img:"",lat:51.0003,lng:3.8000,desc:"The pink-elephant beer — spicy, complex, and full of surprises."},
-{name:"La Chouffe",type:"Strong Blond Ale",abv:8.0,region:"Luxembourg",brewery:"Brasserie d'Achouffe",personality:"free-spirit",img:"",lat:50.1264,lng:5.7567,desc:"Brewed in the Ardennes with a gnome on the label. Unfiltered and earthy."},
-{name:"Gulden Draak",type:"Strong Dark Ale",abv:10.5,region:"East Flanders",brewery:"Van Steenberge",personality:"adventurer",img:"",lat:51.1439,lng:3.7258,desc:"The Golden Dragon — a beast at 10.5% with dark fruit and boozy warmth."},
-{name:"Pauwel Kwak",type:"Strong Amber Ale",abv:8.4,region:"East Flanders",brewery:"Bosteels Brewery",personality:"adventurer",img:"",lat:51.0175,lng:4.2047,desc:"Famous for its unique coachman's glass. Rich caramel, banana, warming spice."},
-{name:"Leffe Blond",type:"Abbey Blond",abv:6.6,region:"Wallonia",brewery:"Abbaye de Leffe",personality:"diplomat",img:"",lat:50.2603,lng:4.9133,desc:"Belgium's most exported abbey beer. Smooth, malty, and approachable."},
-{name:"Leffe Brune",type:"Abbey Brown",abv:6.5,region:"Wallonia",brewery:"Abbaye de Leffe",personality:"nurturer",img:"",lat:50.2603,lng:4.9133,desc:"Dark caramel, toffee, and gentle sweetness. A warm, comforting classic."},
-{name:"Affligem Blond",type:"Abbey Blond",abv:6.8,region:"Flemish Brabant",brewery:"Brouwerij Affligem",personality:"diplomat",img:"",lat:50.9178,lng:4.1069,desc:"Dating back to 1074. Balanced, floral, and elegant."},
-{name:"St. Bernardus Abt 12",type:"Quadrupel",abv:10.0,region:"West Flanders",brewery:"St. Bernardus Brewery",personality:"thinker",img:"",lat:50.8556,lng:2.6500,desc:"Based on the Westvleteren recipe. Dark fruit, caramel, coffee, astonishing smoothness."},
-{name:"Tripel Karmeliet",type:"Tripel",abv:8.4,region:"East Flanders",brewery:"Bosteels Brewery",personality:"achiever",img:"",lat:51.0175,lng:4.2047,desc:"17th-century recipe using three grains. Creamy, complex, vanilla and banana."},
+{name:"Delirium Tremens",type:"Strong Golden Ale",abv:8.5,region:"East Flanders",brewery:"Brouwerij Huyghe",personality:"free-spirit",img:"images/delirium-tremens.png",lat:51.0003,lng:3.8000,desc:"The pink-elephant beer — spicy, complex, and full of surprises."},
+{name:"La Chouffe",type:"Strong Blond Ale",abv:8.0,region:"Luxembourg",brewery:"Brasserie d'Achouffe",personality:"free-spirit",img:"images/la-chouffe.png",lat:50.1264,lng:5.7567,desc:"Brewed in the Ardennes with a gnome on the label. Unfiltered and earthy."},
+{name:"Gulden Draak",type:"Strong Dark Ale",abv:10.5,region:"East Flanders",brewery:"Van Steenberge",personality:"adventurer",img:"images/gulden-draak.png",lat:51.1439,lng:3.7258,desc:"The Golden Dragon — a beast at 10.5% with dark fruit and boozy warmth."},
+{name:"Pauwel Kwak",type:"Strong Amber Ale",abv:8.4,region:"East Flanders",brewery:"Bosteels Brewery",personality:"adventurer",img:"images/pauwel-kwak.png",lat:51.0175,lng:4.2047,desc:"Famous for its unique coachman's glass. Rich caramel, banana, warming spice."},
+{name:"Leffe Blond",type:"Abbey Blond",abv:6.6,region:"Wallonia",brewery:"Abbaye de Leffe",personality:"diplomat",img:"images/leffe-blond.png",lat:50.2603,lng:4.9133,desc:"Belgium's most exported abbey beer. Smooth, malty, and approachable."},
+{name:"Leffe Brune",type:"Abbey Brown",abv:6.5,region:"Wallonia",brewery:"Abbaye de Leffe",personality:"nurturer",img:"images/leffe-brune.png",lat:50.2603,lng:4.9133,desc:"Dark caramel, toffee, and gentle sweetness. A warm, comforting classic."},
+{name:"Affligem Blond",type:"Abbey Blond",abv:6.8,region:"Flemish Brabant",brewery:"Brouwerij Affligem",personality:"diplomat",img:"images/affligem-blond.png",lat:50.9178,lng:4.1069,desc:"Dating back to 1074. Balanced, floral, and elegant."},
+{name:"St. Bernardus Abt 12",type:"Quadrupel",abv:10.0,region:"West Flanders",brewery:"St. Bernardus Brewery",personality:"thinker",img:"images/st-bernardus-abt12.png",lat:50.8556,lng:2.6500,desc:"Based on the Westvleteren recipe. Dark fruit, caramel, coffee, astonishing smoothness."},
+{name:"Tripel Karmeliet",type:"Tripel",abv:8.4,region:"East Flanders",brewery:"Bosteels Brewery",personality:"achiever",img:"images/tripel-karmeliet.png",lat:51.0175,lng:4.2047,desc:"17th-century recipe using three grains. Creamy, complex, vanilla and banana."},
 {name:"Cantillon Gueuze",type:"Gueuze (Lambic)",abv:5.0,region:"Brussels",brewery:"Brasserie Cantillon",personality:"creative",img:"https://upload.wikimedia.org/wikipedia/commons/e/e0/Cantillon_gueze_bottles.png",lat:50.8428,lng:4.3314,desc:"The gold standard of spontaneous fermentation. Tart, complex, funky."},
-{name:"3 Fonteinen Oude Geuze",type:"Gueuze (Lambic)",abv:6.0,region:"Flemish Brabant",brewery:"3 Fonteinen",personality:"creative",img:"",lat:50.7628,lng:4.3006,desc:"A masterful blend of 1, 2, and 3-year-old lambics. Bone-dry, complex."},
-{name:"Boon Oude Geuze",type:"Gueuze (Lambic)",abv:8.0,region:"Flemish Brabant",brewery:"Brouwerij Boon",personality:"creative",img:"",lat:50.7074,lng:4.2338,desc:"'The Perfect Marriage' — intensely tart, oaky, dried apple and lemon."},
-{name:"Lindemans Kriek",type:"Fruit Lambic",abv:3.5,region:"Flemish Brabant",brewery:"Brouwerij Lindemans",personality:"social",img:"",lat:50.8014,lng:4.2292,desc:"Sweet cherry lambic. Bright red, fruity, and playful."},
-{name:"Hoegaarden",type:"Witbier",abv:4.9,region:"Flemish Brabant",brewery:"Brouwerij van Hoegaarden",personality:"social",img:"",lat:50.7700,lng:4.8833,desc:"Revived an entire style. Hazy, light, spiced with coriander and orange peel."},
-{name:"St. Bernardus Wit",type:"Witbier",abv:5.5,region:"West Flanders",brewery:"St. Bernardus Brewery",personality:"social",img:"",lat:50.8556,lng:2.6500,desc:"Craft Witbier with more body than typical examples. Creamy and herbal."},
-{name:"Blanche de Namur",type:"Witbier",abv:4.5,region:"Namur",brewery:"Brasserie du Bocq",personality:"social",img:"",lat:50.3336,lng:4.9589,desc:"Named after a 14th-century queen. Delicate, lemony, refreshing."},
-{name:"Rodenbach Grand Cru",type:"Flanders Red",abv:6.0,region:"West Flanders",brewery:"Brouwerij Rodenbach",personality:"adventurer",img:"",lat:50.9467,lng:3.1231,desc:"Aged 2 years in oak foeders. Red, tart, wine-like. The rebel of Belgian beer."},
-{name:"Duchesse de Bourgogne",type:"Flanders Red",abv:6.2,region:"West Flanders",brewery:"Brouwerij Verhaeghe",personality:"adventurer",img:"",lat:50.8375,lng:3.3978,desc:"Sweet-sour, cherry, chocolate — liquid velvet rebellion."},
-{name:"Saison Dupont",type:"Saison",abv:6.5,region:"Hainaut",brewery:"Brasserie Dupont",personality:"free-spirit",img:"",lat:50.5561,lng:3.6697,desc:"The archetypal farmhouse ale. Dry, peppery, citrusy, alive with character."},
-{name:"Fantôme Saison",type:"Saison",abv:8.0,region:"Luxembourg",brewery:"Brasserie Fantôme",personality:"creative",img:"",lat:50.2558,lng:5.5833,desc:"Brewed by one man in a haunted farmhouse. Every batch is different."},
-{name:"Stella Artois",type:"Pilsner",abv:5.0,region:"Flemish Brabant",brewery:"AB InBev (Leuven)",personality:"diplomat",img:"",lat:50.8797,lng:4.7003,desc:"Belgium's most famous lager. Clean, crisp, universally recognizable."},
-{name:"Jupiler",type:"Pilsner",abv:5.2,region:"Liège",brewery:"AB InBev (Jupille)",personality:"social",img:"",lat:50.6389,lng:5.6064,desc:"Belgium's best-selling beer. Crisp, easy-drinking, deeply embedded in culture."},
-{name:"Brugse Zot Blond",type:"Belgian Blond",abv:6.0,region:"West Flanders",brewery:"De Halve Maan",personality:"diplomat",img:"",lat:51.2028,lng:3.2244,desc:"Official city beer of Bruges. Fresh, fruity, and spicy."},
+{name:"3 Fonteinen Oude Geuze",type:"Gueuze (Lambic)",abv:6.0,region:"Flemish Brabant",brewery:"3 Fonteinen",personality:"creative",img:"images/3-fonteinen.png",lat:50.7628,lng:4.3006,desc:"A masterful blend of 1, 2, and 3-year-old lambics. Bone-dry, complex."},
+{name:"Boon Oude Geuze",type:"Gueuze (Lambic)",abv:8.0,region:"Flemish Brabant",brewery:"Brouwerij Boon",personality:"creative",img:"images/boon-oude-geuze.png",lat:50.7074,lng:4.2338,desc:"'The Perfect Marriage' — intensely tart, oaky, dried apple and lemon."},
+{name:"Lindemans Kriek",type:"Fruit Lambic",abv:3.5,region:"Flemish Brabant",brewery:"Brouwerij Lindemans",personality:"social",img:"https://upload.wikimedia.org/wikipedia/commons/c/c0/Lindemans_Kriek_%282%29.jpg",lat:50.8014,lng:4.2292,desc:"Sweet cherry lambic. Bright red, fruity, and playful."},
+{name:"Hoegaarden",type:"Witbier",abv:4.9,region:"Flemish Brabant",brewery:"Brouwerij van Hoegaarden",personality:"social",img:"https://upload.wikimedia.org/wikipedia/commons/1/19/Hoegaarden_Wit.jpg",lat:50.7700,lng:4.8833,desc:"Revived an entire style. Hazy, light, spiced with coriander and orange peel."},
+{name:"St. Bernardus Wit",type:"Witbier",abv:5.5,region:"West Flanders",brewery:"St. Bernardus Brewery",personality:"social",img:"https://upload.wikimedia.org/wikipedia/commons/0/0d/Watou%27s_wit.JPG",lat:50.8556,lng:2.6500,desc:"Craft Witbier with more body than typical examples. Creamy and herbal."},
+{name:"Blanche de Namur",type:"Witbier",abv:4.5,region:"Namur",brewery:"Brasserie du Bocq",personality:"social",img:"https://upload.wikimedia.org/wikipedia/commons/1/1a/BlanchedeNamurWitbier.jpg",lat:50.3336,lng:4.9589,desc:"Named after a 14th-century queen. Delicate, lemony, refreshing."},
+{name:"Rodenbach Grand Cru",type:"Flanders Red",abv:6.0,region:"West Flanders",brewery:"Brouwerij Rodenbach",personality:"adventurer",img:"https://upload.wikimedia.org/wikipedia/commons/f/fa/Rodenbach_grand_cru_bottle.jpg",lat:50.9467,lng:3.1231,desc:"Aged 2 years in oak foeders. Red, tart, wine-like. The rebel of Belgian beer."},
+{name:"Duchesse de Bourgogne",type:"Flanders Red",abv:6.2,region:"West Flanders",brewery:"Brouwerij Verhaeghe",personality:"adventurer",img:"https://upload.wikimedia.org/wikipedia/commons/6/65/Duchesse_De_Bourgogne.JPG",lat:50.8375,lng:3.3978,desc:"Sweet-sour, cherry, chocolate — liquid velvet rebellion."},
+{name:"Saison Dupont",type:"Saison",abv:6.5,region:"Hainaut",brewery:"Brasserie Dupont",personality:"free-spirit",img:"https://upload.wikimedia.org/wikipedia/commons/b/bd/Saison_Dupont_%28bierfles%29.jpg",lat:50.5561,lng:3.6697,desc:"The archetypal farmhouse ale. Dry, peppery, citrusy, alive with character."},
+{name:"Fantôme Saison",type:"Saison",abv:8.0,region:"Luxembourg",brewery:"Brasserie Fantôme",personality:"creative",img:"",lat:50.2558,lng:5.5833,desc:"Brewed by one man in a haunted farmhouse. Every batch is different."},/* no commons image available */
+{name:"Stella Artois",type:"Pilsner",abv:5.0,region:"Flemish Brabant",brewery:"AB InBev (Leuven)",personality:"diplomat",img:"https://upload.wikimedia.org/wikipedia/commons/8/8e/Stella_Artois_chalice_filled.jpg",lat:50.8797,lng:4.7003,desc:"Belgium's most famous lager. Clean, crisp, universally recognizable."},
+{name:"Jupiler",type:"Pilsner",abv:5.2,region:"Liège",brewery:"AB InBev (Jupille)",personality:"social",img:"https://upload.wikimedia.org/wikipedia/commons/8/8a/Jupiler_2012_091.JPG",lat:50.6389,lng:5.6064,desc:"Belgium's best-selling beer. Crisp, easy-drinking, deeply embedded in culture."},
+{name:"Brugse Zot Blond",type:"Belgian Blond",abv:6.0,region:"West Flanders",brewery:"De Halve Maan",personality:"diplomat",img:"https://upload.wikimedia.org/wikipedia/commons/c/c7/Brugse_zot_bier.jpg",lat:51.2028,lng:3.2244,desc:"Official city beer of Bruges. Fresh, fruity, and spicy."},
 ];
 
 const personalities={thinker:{label:"🧠 The Thinker"},creative:{label:"🎨 The Creative"},social:{label:"☀️ The Social One"},nurturer:{label:"🤗 The Nurturer"},achiever:{label:"🚀 The Achiever"},diplomat:{label:"🤝 The Diplomat"},adventurer:{label:"🔥 The Adventurer"},"free-spirit":{label:"🌿 The Free Spirit"}};
@@ -498,7 +510,7 @@ let hasRealLocation=false;
 
 // Try to get real location on page load (silently — no prompt if blocked)
 try{
-  if(navigator.geolocation){
+  if(navigator.geolocation && window.isSecureContext){
     navigator.geolocation.getCurrentPosition(pos=>{
       userLat=pos.coords.latitude;userLng=pos.coords.longitude;
       hasRealLocation=true;
@@ -506,7 +518,7 @@ try{
       const btn=document.getElementById('locate-btn');
       if(btn)btn.textContent='📍 Location Set ✓';
       renderCafes();
-    },()=>{/* silently fall back to Brussels center */},{timeout:5000});
+    },()=>{/* silently fall back to Brussels center */},{timeout:10000,enableHighAccuracy:false,maximumAge:300000});
   }
 }catch(e){}
 
@@ -540,7 +552,10 @@ function renderCafes(){
 function getUserLocation(){
   const btn=document.getElementById('locate-btn');
   btn.disabled=true;btn.textContent='📍 Locating…';
-  if(!navigator.geolocation){
+  if(!navigator.geolocation || !window.isSecureContext){
+    document.getElementById('location-info').textContent=window.isSecureContext
+      ?'📍 Geolocation not supported. Distances shown from Brussels center.'
+      :'📍 Location requires HTTPS. Distances shown from Brussels center.';
     btn.textContent='📍 Using Brussels Center';btn.disabled=false;
     renderCafes();return;
   }
@@ -551,13 +566,17 @@ function getUserLocation(){
     btn.textContent='📍 Location Set ✓';
     renderCafes();
   },err=>{
-    const isHTTPS=window.location.protocol==='https:';
-    document.getElementById('location-info').textContent=isHTTPS
-      ?'📍 Location access denied. Click "Allow" in your browser to sort cafés by distance.'
-      :'📍 Location requires HTTPS. Distances shown from Brussels center.';
+    let msg;
+    switch(err.code){
+      case 1: msg='📍 Location access denied. Please allow location access in your browser settings.'; break;
+      case 2: msg='📍 Location unavailable. Distances shown from Brussels center.'; break;
+      case 3: msg='📍 Location request timed out. Distances shown from Brussels center.'; break;
+      default: msg='📍 Could not get location. Distances shown from Brussels center.';
+    }
+    document.getElementById('location-info').textContent=msg;
     btn.textContent='📍 Using Brussels Center';btn.disabled=false;
     renderCafes();
-  },{timeout:5000});
+  },{timeout:10000,enableHighAccuracy:false,maximumAge:300000});
 }
 
 // ═══════════════════════════════════════
@@ -669,6 +688,47 @@ function updateNightShopMapMarkers(){
   });
   nightShopMapLayer.addTo(beerMap);
 }
+
+// ═══════════════════════════════════════
+//  MAP NIGHT SHOP TOGGLE (independent of café section toggle)
+// ═══════════════════════════════════════
+let mapNightShopsOn=false;
+function toggleMapNightShops(){
+  mapNightShopsOn=!mapNightShopsOn;
+  const toggle=document.getElementById('map-nightshop-toggle');
+  const track=toggle.querySelector('.toggle-track');
+  const knob=toggle.querySelector('.toggle-knob');
+  if(mapNightShopsOn){
+    track.style.background='#7c3aed';track.style.borderColor='#7c3aed';
+    knob.style.transform='translateX(18px)';knob.style.background='#fff';
+  }else{
+    track.style.background='var(--surface2)';track.style.borderColor='var(--border)';
+    knob.style.transform='translateX(0)';knob.style.background='var(--text-muted)';
+  }
+  if(mapNightShopsOn&&nightShopsData===null){
+    fetch('data/night-shops.json')
+      .then(r=>r.json())
+      .then(data=>{nightShopsData=data;updateNightShopMapMarkers()})
+      .catch(()=>{nightShopsData=[];});
+  }else{
+    updateNightShopMapMarkers();
+  }
+}
+
+// Override the original updateNightShopMapMarkers to respect mapNightShopsOn
+const _origUpdateNSM=updateNightShopMapMarkers;
+updateNightShopMapMarkers=function(){
+  if(!beerMap||!mapInit)return;
+  if(nightShopMapLayer){beerMap.removeLayer(nightShopMapLayer);nightShopMapLayer=null}
+  // Show markers if EITHER the café toggle OR the map toggle is on
+  if((!nightShopsVisible&&!mapNightShopsOn)||!nightShopsData||!nightShopsData.length)return;
+  nightShopMapLayer=L.layerGroup();
+  nightShopsData.forEach(s=>{
+    const icon=L.divIcon({className:'',html:`<div style="width:24px;height:24px;background:#8b5cf6;border:2px solid rgba(255,255,255,0.9);border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer" onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'">🌙</div>`,iconSize:[24,24],iconAnchor:[12,12]});
+    L.marker([s.lat,s.lng],{icon}).bindPopup(`<div class="popup-brewery">${s.name}</div><div style="color:var(--text-dim);font-size:.75rem">${s.address}</div>${s.opening_hours?`<div style="color:#c084fc;font-size:.75rem;margin-top:4px">🕐 ${s.opening_hours}</div>`:''}`).addTo(nightShopMapLayer);
+  });
+  nightShopMapLayer.addTo(beerMap);
+};
 
 // ═══════════════════════════════════════
 //  REGIONS
