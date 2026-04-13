@@ -14,7 +14,7 @@
 | Feature | Description |
 |---|---|
 | Beer Database | 34 iconic Belgian beers with metadata (type, ABV, region, brewery, personality) |
-| Brussels Cafés | 20 top beer cafés with geolocation-based distance sorting |
+| Brussels Cafés | 25 beer cafés across Brussels Capital Region with filterable vibe/feature tags |
 | Interactive Map | Leaflet.js map with brewery, café, and night shop markers |
 | Personality Quiz | 7-question quiz that matches users to a beer personality |
 | Feeling Lucky | Random beer picker with dice animation |
@@ -36,6 +36,7 @@ belgian-beers/
 ├── .github/
 │   └── workflows/
 │       └── update-trending.yml  # Weekly Untappd trending updater
+├── images/              # AI-generated beer images (34 PNGs)
 ├── AGENTS.md               # This file — AI assistant instructions
 ├── CLAUDE.md               # Claude-specific pointer
 ├── GEMINI.md               # Gemini-specific pointer
@@ -63,7 +64,8 @@ belgian-beers/
 ### Data Integrity
 
 - **Beer database**: 34 beers in the `beers` array. Each beer must have: `name`, `type`, `abv`, `region`, `brewery`, `personality`, `img` (can be empty string), `lat`, `lng`, `desc`.
-- **Café database**: 20 cafés in the `cafes` array. Each café must have: `id`, `name`, `address`, `lat`, `lng`, `sourceUrl`, `verifiedDate`, `desc`, `beers` (array of beer names that must match `beers[].name` exactly).
+- **Café database**: 25 cafés in the `cafes` array. Each café must have: `id`, `name`, `address`, `lat`, `lng`, `sourceUrl`, `verifiedDate`, `desc`, `tags` (array of tag strings from `cafeTagMeta`), `beers` (array of beer names that must match `beers[].name` exactly).
+- **Café tags**: Valid tags are defined in `cafeTagMeta`: `lively`, `chill`, `historic`, `local`, `touristy`, `date-night`, `terrace`, `food`, `brewery`, `sports`, `high-end`, `budget`. Tags are derived from review analysis.
 - **Personality types**: `thinker`, `creative`, `social`, `nurturer`, `achiever`, `diplomat`, `adventurer`, `free-spirit`. Do not add new types without updating the quiz logic.
 
 ### Style Guide
@@ -105,7 +107,7 @@ docs: update README
 1. Add entry to the `beers` array in `index.html`.
 2. Find the brewery coordinates on Google Maps for `lat`/`lng`.
 3. Assign a `personality` from the existing 8 types.
-4. Optionally add a Wikimedia Commons image URL for `img`.
+4. Add a locally generated image to `images/` for `img` (preferred), or use a Wikimedia Commons URL.
 
 ### Adding a New Café
 
@@ -113,6 +115,7 @@ docs: update README
 2. Ensure all beer names in the `beers` array match existing beer names exactly (case-sensitive).
 3. Set `sourceUrl` to the café's website or Google Maps link.
 4. Set `verifiedDate` to the current month (e.g., `"2026-04"`).
+5. Add `tags` array using valid tag keys from `cafeTagMeta` (research reviews to assign appropriate tags).
 
 ### Updating Night Shops
 
