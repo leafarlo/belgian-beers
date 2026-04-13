@@ -547,20 +547,6 @@ document.getElementById('filter-search').addEventListener('input',applyFilters);
 let userLat=50.8476,userLng=4.3572;
 let hasRealLocation=false;
 
-// Try to get real location on page load (silently — no prompt if blocked)
-try{
-  if(navigator.geolocation && window.isSecureContext){
-    navigator.geolocation.getCurrentPosition(pos=>{
-      userLat=pos.coords.latitude;userLng=pos.coords.longitude;
-      hasRealLocation=true;
-      document.getElementById('location-info').textContent=`📍 Your location: ${userLat.toFixed(4)}, ${userLng.toFixed(4)} — cafés sorted by distance`;
-      const btn=document.getElementById('locate-btn');
-      if(btn)btn.textContent='📍 Location Set ✓';
-      renderCafes();
-    },()=>{/* silently fall back to Brussels center */},{timeout:10000,enableHighAccuracy:false,maximumAge:300000});
-  }
-}catch(e){}
-
 function haversine(lat1,lng1,lat2,lng2){
   const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
@@ -862,6 +848,7 @@ document.getElementById('nav-tabs').addEventListener('click',e=>{
   document.getElementById(tab).classList.add('active');
   e.target.classList.add('active');
   if(tab==='map-section')setTimeout(()=>{initMap();if(beerMap){beerMap.invalidateSize();updateNightShopMapMarkers()}},100);
+  if(tab==='cafes') getUserLocation();
 });
 
 // ═══════════════════════════════════════
