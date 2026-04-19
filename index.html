@@ -542,11 +542,11 @@ function renderCafes(){
       const m=cafeTagMeta[t];
       return m?`<span class="cafe-tag-badge t-${t}">${m.icon} ${m.label}</span>`:'';
     }).join('');
-    return`<div class="cafe-card">
+    return`<div class="cafe-card" style="cursor:pointer;" title="Click to see opening hours">
       <span class="cafe-rank">${i+1}</span>
       <h3>${c.name}</h3>
       <div class="cafe-address">📍 ${c.address}</div>
-${c.openingHours?`<div class="ns-hours" style="margin-bottom:10px;">🕐 ${c.openingHours}</div>`:''}
+${c.openingHours?`<div class="ns-hours cafe-hours-toggle" style="margin-bottom:10px; display:none; font-size:0.9rem;">🕐 ${c.openingHours}</div>`:''}
       <div class="cafe-distance">📏 ${dist<1?(dist*1000).toFixed(0)+'m':dist.toFixed(1)+'km'} ${hasRealLocation?'from you':'from center'}</div>
       <div class="cafe-tags-display">${tagBadges}</div>
       <div class="cafe-desc">${c.desc}</div>
@@ -858,10 +858,21 @@ document.getElementById('beer-grid').addEventListener('click',e=>{
   const card=e.target.closest('[data-beer]');
   if(card)onBeerClick(card.dataset.beer);
 });
-// Cafe tab: clicking a beer tag triggers beer detail modal
 document.getElementById('cafe-grid').addEventListener('click',e=>{
   const tag=e.target.closest('.cafe-beer-tag[data-beer]');
-  if(tag){e.stopPropagation();onBeerClick(tag.dataset.beer);}
+  if(tag){
+    e.stopPropagation();
+    onBeerClick(tag.dataset.beer);
+    return;
+  }
+  
+  const card=e.target.closest('.cafe-card');
+  if(card){
+    const hours = card.querySelector('.cafe-hours-toggle');
+    if(hours) {
+      hours.style.display = hours.style.display === 'none' ? 'block' : 'none';
+    }
+  }
 });
 // Beer detail overlay: backdrop click closes modal
 document.getElementById('beer-detail-overlay').addEventListener('click',e=>{
