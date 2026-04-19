@@ -270,6 +270,7 @@
   <div class="user-location-info" id="location-info"></div>
   <div class="filter-bar">
     <label>Search:</label>
+    <select id="filter-cafe-type" onchange="renderCafes()"><option value="">All Beer Types</option></select>
     <input type="text" id="cafe-search" class="cafe-search" placeholder="Search café or beer name…" oninput="renderCafes()">
   </div>
   <div class="cafe-tag-filters" id="cafe-tag-filters"></div>
@@ -369,10 +370,13 @@
 </div>
 
 <footer>
-    <p>
+    <p style="margin-bottom:16px">
         Drink responsibly. Proost! 🇧🇪<br>
         Built by Jan Coosemans and Rafael Lodewyckx
     </p>
+    <a href="https://www.buymeacoffee.com/" id="donation-link" target="_blank" style="display:none;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);color:var(--gold-light);text-decoration:none;padding:8px 16px;border-radius:20px;font-size:0.85rem;font-weight:600;transition:all 0.3s;" onmouseover="this.style.borderColor='var(--gold)';this.style.background='var(--surface)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface2)'">
+        🍻 Buy us a beer
+    </a>
 </footer>
 
 <script>
@@ -530,7 +534,7 @@ function populateFilters(){
   const types=[...new Set(beers.map(b=>b.type))].sort();
   const regions=[...new Set(beers.map(b=>b.region))].sort();
   const pkeys=[...new Set(beers.map(b=>b.personality))];
-  types.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;document.getElementById('filter-type').appendChild(o)});
+  types.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;document.getElementById('filter-type').appendChild(o);const o2=document.createElement('option');o2.value=t;o2.textContent=t;document.getElementById('filter-cafe-type')?.appendChild(o2);});
   regions.forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;document.getElementById('filter-region').appendChild(o)});
   pkeys.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=personalities[p].label;document.getElementById('filter-personality').appendChild(o)});
 }
@@ -579,9 +583,12 @@ function toggleCafeTag(tag){
 
 function renderCafes(){
   const search=(document.getElementById('cafe-search')?.value||'').toLowerCase();
+  const filterType=document.getElementById('filter-cafe-type')?.value||'';
   let list=cafes;
   // text search
   if(search)list=list.filter(c=>c.name.toLowerCase().includes(search)||c.beers.some(b=>b.toLowerCase().includes(search))||c.address.toLowerCase().includes(search));
+  // beer type filter
+  if(filterType)list=list.filter(c=>c.beers.some(bName=>{const b=beers.find(x=>x.name===bName);return b&&b.type===filterType;}));
   // tag filter (AND logic — must match ALL selected tags)
   if(activeCafeTags.size>0)list=list.filter(c=>c.tags&&[...activeCafeTags].every(t=>c.tags.includes(t)));
   // sort by distance
@@ -931,7 +938,11 @@ document.getElementById('beer-detail-find-btn').addEventListener('click',findNea
 // ═══════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════
+const ENABLE_DONATION = false; // Set to true to show the "Buy us a beer" button
+if (ENABLE_DONATION) document.getElementById('donation-link').style.display = 'inline-flex';
+
 populateFilters();renderBeers(beers);renderRegions();renderQuiz();loadTrending();initCafeTagFilters();renderCafes();
+
 </script>
 </body>
 </html>
