@@ -62,7 +62,7 @@ def fetch_brussels_cafes():
         new_cafes.append(cafe)
 
     # Save to a temporary integration file so we don't overwrite our curated JSON.
-    output_target = "../data/cafes_from_google.json"
+    output_target = "data/cafes_from_google.json"
     with open(output_target, "w", encoding="utf-8") as f:
         json.dump(new_cafes, f, indent=2, ensure_ascii=False)
         
