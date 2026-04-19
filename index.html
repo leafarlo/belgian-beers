@@ -88,6 +88,17 @@
     .cafe-card .cafe-address{color:var(--text-dim);font-size:0.78rem;margin-bottom:10px}
     .cafe-card .cafe-desc{color:#bfb49e;font-size:0.84rem;line-height:1.5;margin-bottom:12px}
     .cafe-card .cafe-distance{background:rgba(59,130,246,0.12);color:#60a5fa;padding:4px 12px;border-radius:20px;font-size:0.74rem;font-weight:600;border:1px solid rgba(59,130,246,0.25);display:inline-block;margin-bottom:10px}
+    .cafe-hours-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:0.74rem;font-weight:600;cursor:pointer;transition:all .25s;margin-bottom:10px;margin-left:6px}
+    .cafe-hours-badge.open{background:rgba(34,197,94,0.12);color:#4ade80;border:1px solid rgba(34,197,94,0.25)}
+    .cafe-hours-badge.closed{background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25)}
+    .cafe-hours-badge.unknown{background:rgba(163,163,163,0.12);color:#a3a3a3;border:1px solid rgba(163,163,163,0.25)}
+    .cafe-hours-badge:hover{transform:scale(1.05)}
+    .cafe-hours-detail{font-size:0.78rem;color:var(--text-muted);line-height:1.6;margin-bottom:10px;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid var(--border)}
+    .cafe-hours-detail .hours-day{display:flex;justify-content:space-between;gap:12px}
+    .cafe-hours-detail .hours-day.today{color:var(--gold-light);font-weight:600}
+    .open-now-toggle{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);color:var(--text-muted);padding:6px 14px;border-radius:30px;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.78rem;font-weight:500;transition:all .25s;white-space:nowrap}
+    .open-now-toggle:hover{border-color:var(--gold);color:var(--gold-light)}
+    .open-now-toggle.active{background:rgba(34,197,94,0.15);color:#4ade80;border-color:rgba(34,197,94,0.4);font-weight:600}
     .cafe-beers-title{color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:6px}
     .cafe-beer-tags{display:flex;flex-wrap:wrap;gap:5px}
     .cafe-beer-tag{font-size:0.7rem;padding:3px 8px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:#bfb49e;cursor:pointer;transition:all .2s}
@@ -271,6 +282,7 @@
   <div class="filter-bar">
     <label>Search:</label>
     <select id="filter-cafe-type" onchange="renderCafes()"><option value="">All Beer Types</option></select>
+    <button class="open-now-toggle" id="open-now-toggle" onclick="toggleOpenNow()">🟢 Open Now</button>
     <input type="text" id="cafe-search" class="cafe-search" placeholder="Search café or beer name…" oninput="renderCafes()">
   </div>
   <div class="cafe-tag-filters" id="cafe-tag-filters"></div>
@@ -515,6 +527,74 @@ function toggleCafeTag(tag){
   renderCafes();
 }
 
+// ═══════════════════════════════════════
+//  OPENING HOURS PARSER & HELPERS
+// ═══════════════════════════════════════
+const DAY_NAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAY_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function parseTimeStr(s){
+  // Parse "11:00 AM", "4:00 PM", "12:00 AM", "3:00 AM" etc.
+  const m=s.trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if(!m) return null;
+  let h=parseInt(m[1]),min=parseInt(m[2]);
+  const ampm=m[3].toUpperCase();
+  if(ampm==='PM'&&h!==12) h+=12;
+  if(ampm==='AM'&&h===12) h=0;
+  return h*60+min;
+}
+
+function isOpenNow(hoursStr){
+  if(!hoursStr) return null; // unknown
+  const now=new Date();
+  const dayName=DAY_NAMES[now.getDay()];
+  // Find this day's entry
+  const parts=hoursStr.split('|').map(s=>s.trim());
+  const todayPart=parts.find(p=>p.startsWith(dayName));
+  if(!todayPart) return null;
+  if(todayPart.includes('Closed')) return false;
+  // Extract time range(s), e.g. "Monday: 11:00 AM – 3:00 AM" or "11:00 AM – 1:00 AM"
+  const colonIdx=todayPart.indexOf(':');
+  const timePart=todayPart.slice(colonIdx+1).trim();
+  // May have multiple ranges separated by comma
+  const ranges=timePart.split(',').map(s=>s.trim());
+  const nowMins=now.getHours()*60+now.getMinutes();
+  for(const range of ranges){
+    const dash=range.split(/\s*[–-]\s*/);
+    if(dash.length!==2) continue;
+    const open=parseTimeStr(dash[0]),close=parseTimeStr(dash[1]);
+    if(open===null||close===null) continue;
+    if(close>open){
+      if(nowMins>=open&&nowMins<close) return true;
+    } else {
+      // wraps past midnight (e.g. 11AM-3AM)
+      if(nowMins>=open||nowMins<close) return true;
+    }
+  }
+  return false;
+}
+
+function formatHoursTable(hoursStr){
+  if(!hoursStr) return '';
+  const now=new Date();
+  const todayName=DAY_NAMES[now.getDay()];
+  const parts=hoursStr.split('|').map(s=>s.trim());
+  return parts.map(p=>{
+    const colon=p.indexOf(':');
+    const day=p.slice(0,colon).trim();
+    const time=p.slice(colon+1).trim();
+    const isToday=day===todayName;
+    return `<div class="hours-day${isToday?' today':''}"><span>${isToday?'▸ '+day:day}</span><span>${time}</span></div>`;
+  }).join('');
+}
+
+let filterOpenNow=false;
+function toggleOpenNow(){
+  filterOpenNow=!filterOpenNow;
+  document.getElementById('open-now-toggle').classList.toggle('active',filterOpenNow);
+  renderCafes();
+}
+
 function renderCafes(){
   const search=(document.getElementById('cafe-search')?.value||'').toLowerCase();
   const filterType=document.getElementById('filter-cafe-type')?.value||'';
@@ -525,6 +605,8 @@ function renderCafes(){
   if(filterType)list=list.filter(c=>c.beers.some(bName=>{const b=beers.find(x=>x.name===bName);return b&&b.type===filterType;}));
   // tag filter (AND logic — must match ALL selected tags)
   if(activeCafeTags.size>0)list=list.filter(c=>c.tags&&[...activeCafeTags].every(t=>c.tags.includes(t)));
+  // open now filter
+  if(filterOpenNow)list=list.filter(c=>isOpenNow(c.openingHours)===true);
   // sort by distance
   list=[...list].sort((a,b)=>haversine(userLat,userLng,a.lat,a.lng)-haversine(userLat,userLng,b.lat,b.lng));
   // update count
@@ -542,12 +624,20 @@ function renderCafes(){
       const m=cafeTagMeta[t];
       return m?`<span class="cafe-tag-badge t-${t}">${m.icon} ${m.label}</span>`:'';
     }).join('');
-    return`<div class="cafe-card" style="cursor:pointer;" title="Click to see opening hours">
+    const openStatus=isOpenNow(c.openingHours);
+    const statusClass=openStatus===true?'open':openStatus===false?'closed':'unknown';
+    const statusText=openStatus===true?'Open Now':openStatus===false?'Closed':'Hours';
+    const statusIcon=openStatus===true?'🟢':openStatus===false?'🔴':'🕐';
+    const hoursTable=formatHoursTable(c.openingHours);
+    return`<div class="cafe-card">
       <span class="cafe-rank">${i+1}</span>
       <h3>${c.name}</h3>
       <div class="cafe-address">📍 ${c.address}</div>
-${c.openingHours?`<div class="ns-hours cafe-hours-toggle" style="margin-bottom:10px; display:none; font-size:0.9rem;">🕐 ${c.openingHours}</div>`:''}
-      <div class="cafe-distance">📏 ${dist<1?(dist*1000).toFixed(0)+'m':dist.toFixed(1)+'km'} ${hasRealLocation?'from you':'from center'}</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px">
+        <div class="cafe-distance">📏 ${dist<1?(dist*1000).toFixed(0)+'m':dist.toFixed(1)+'km'} ${hasRealLocation?'from you':'from center'}</div>
+        ${c.openingHours?`<span class="cafe-hours-badge ${statusClass}" data-hours-toggle>${statusIcon} ${statusText}</span>`:''}
+      </div>
+      ${hoursTable?`<div class="cafe-hours-detail" style="display:none">${hoursTable}</div>`:''}
       <div class="cafe-tags-display">${tagBadges}</div>
       <div class="cafe-desc">${c.desc}</div>
       <div class="cafe-beers-title">Beers served</div>
@@ -865,13 +955,12 @@ document.getElementById('cafe-grid').addEventListener('click',e=>{
     onBeerClick(tag.dataset.beer);
     return;
   }
-  
-  const card=e.target.closest('.cafe-card');
-  if(card){
-    const hours = card.querySelector('.cafe-hours-toggle');
-    if(hours) {
-      hours.style.display = hours.style.display === 'none' ? 'block' : 'none';
-    }
+  const badge=e.target.closest('[data-hours-toggle]');
+  if(badge){
+    const card=badge.closest('.cafe-card');
+    const detail=card?.querySelector('.cafe-hours-detail');
+    if(detail) detail.style.display=detail.style.display==='none'?'block':'none';
+    return;
   }
 });
 // Beer detail overlay: backdrop click closes modal
