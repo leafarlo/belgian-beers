@@ -876,7 +876,14 @@ document.getElementById('beer-detail-find-btn').addEventListener('click',findNea
 const ENABLE_DONATION = false; // Set to true to show the "Buy us a beer" button
 if (ENABLE_DONATION) document.getElementById('donation-link').style.display = 'inline-flex';
 
-populateFilters();renderBeers(beers);renderRegions();renderQuiz();loadTrending();initCafeTagFilters();renderCafes();
+Promise.all([fetch("data/beers.json"), fetch("data/cafes.json")])
+  .then(res => Promise.all(res.map(r => r.json())))
+  .then(([beersData, cafesData]) => {
+    beers = beersData;
+    cafes = cafesData;
+    populateFilters();renderBeers(beers);renderRegions();renderQuiz();loadTrending();initCafeTagFilters();renderCafes();
+  })
+  .catch(err => console.error("Error loading data:", err));
 
 </script>
 </body>
