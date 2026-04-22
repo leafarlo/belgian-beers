@@ -2,7 +2,7 @@
 
 A beautiful, interactive guide to **34 iconic Belgian beers** and the best places to drink them in Brussels. Built as a single-page static website, hosted on GitHub Pages.
 
-🔗 **Live site**: [jcoosemans.github.io/belgian-beers](https://jcoosemans.github.io/belgian-beers/)
+🔗 **Live site**: [leafarlo.github.io/belgian-beers](https://leafarlo.github.io/belgian-beers/)
 
 ---
 
