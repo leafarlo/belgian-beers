@@ -1038,17 +1038,17 @@ function initOrbit() {
     // Duplicate for seamless loop
     const fullStr = beerStr + beerStr + beerStr;
 
-    svg.innerHTML = \`
+    svg.innerHTML = `
       <defs>
-        <path id="orbit-path" d="\${path}" fill="none"/>
+        <path id="orbit-path" d="${path}" fill="none"/>
       </defs>
       <text class="orbit-path-text">
         <textPath href="#orbit-path" startOffset="0">
           <animate attributeName="startOffset" from="0%" to="-100%" dur="25s" repeatCount="indefinite"/>
-          \${fullStr}
+          ${fullStr}
         </textPath>
       </text>
-    \`;
+    `;
   }
 
   buildOrbit();
