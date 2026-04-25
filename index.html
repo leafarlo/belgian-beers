@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Belgian Beers — Find Your Perfect Match in Brussels</title>
+  <title>Brussels Beer Experience — Discover Belgian Beers</title>
   <meta name="description" content="Discover 34 famous Belgian beers, find Brussels cafés that serve them, explore the map, and see trending picks. Perfect for tourists.">
-  <meta property="og:title" content="Belgian Beers — Find Your Perfect Match">
+  <meta property="og:title" content="Brussels Beer Experience — Discover Belgian Beers">
   <meta property="og:description" content="34 iconic Belgian beers, Brussels café finder with map, personality quiz, and weekly trending picks. The tourist's guide to Belgian beer.">
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#0c0a07">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
@@ -18,10 +18,16 @@
     body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
     /* HEADER */
-    header{text-align:center;padding:44px 20px 26px;background:linear-gradient(180deg,#1a1510 0%,var(--bg) 100%);position:relative}
-    header::after{content:'';position:absolute;bottom:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent)}
-    header h1{font-family:'Playfair Display',serif;font-size:clamp(2rem,5.5vw,3.5rem);font-weight:900;background:linear-gradient(135deg,#f5c842,#d4a017,#c7943e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
-    header p{color:var(--text-muted);font-size:0.95rem;max-width:600px;margin:0 auto}
+    header{text-align:center;padding:60px 20px 36px;background:linear-gradient(180deg,#1a1510 0%,var(--bg) 100%);position:relative}
+    header::after{content:'';position:absolute;bottom:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);z-index:5}
+    header h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(2rem,5.5vw,3.5rem);font-weight:700;background:linear-gradient(135deg,#f5c842,#d4a017,#c7943e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:40px;position:relative;z-index:2;letter-spacing:-0.5px}
+    header p{color:var(--text-muted);font-size:0.95rem;max-width:600px;margin:0 auto;position:relative;z-index:2}
+
+    /* ORBITING BEER NAMES */
+    .orbit-wrapper{position:relative;display:inline-block}
+    .orbit-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+    .orbit-svg text{font-family:'Inter',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase}
+    .orbit-path-text{fill:var(--text-dim);opacity:0.5}
 
     /* NAV */
     .tabs{display:flex;justify-content:center;gap:6px;padding:14px 12px;flex-wrap:wrap;position:sticky;top:0;z-index:1000;background:rgba(12,10,7,0.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
@@ -236,7 +242,10 @@
 <body>
 
 <header>
-  <h1>🍺 Belgian Beers</h1>
+  <div class="orbit-wrapper" id="orbit-wrapper">
+    <h1 id="main-title">Brussels Beer Experience</h1>
+    <svg class="orbit-svg" id="orbit-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
   <p>34 iconic Belgian beers, 25 top Brussels cafés, and this week's trending beers.</p>
 </header>
 
@@ -976,12 +985,89 @@ document.getElementById('beer-detail-find-btn').addEventListener('click',findNea
 const ENABLE_DONATION = false; // Set to true to show the "Buy us a beer" button
 if (ENABLE_DONATION) document.getElementById('donation-link').style.display = 'inline-flex';
 
+// ═══════════════════════════════════════
+//  ORBITING BEER NAMES — SVG textPath animation
+//  Beer names flow along a rounded-rect path that outlines the title.
+//  Text literally rolls around the path.
+// ═══════════════════════════════════════
+const ORBIT_BEERS = [
+  'Chimay Blue', 'Duvel', 'Cantillon Gueuze', 'Orval', 'Tripel Karmeliet',
+  'Delirium Tremens', 'Westvleteren 12', 'La Chouffe', 'Rochefort 10', 'Saison Dupont'
+];
+
+function initOrbit() {
+  const h1 = document.getElementById('main-title');
+  const svg = document.getElementById('orbit-svg');
+  const wrapper = document.getElementById('orbit-wrapper');
+  if (!h1 || !svg || !wrapper) return;
+
+  function buildOrbit() {
+    // Measure the h1 bounding box relative to wrapper
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const h1Rect = h1.getBoundingClientRect();
+    const padX = 22, padY = 22, r = 26; // padding around text, corner radius
+
+    const x = (h1Rect.left - wrapperRect.left) - padX;
+    const y = (h1Rect.top - wrapperRect.top) - padY;
+    const w = h1Rect.width + padX * 2;
+    const h = h1Rect.height + padY * 2;
+
+    // SVG viewBox matches wrapper size
+    const svgW = wrapperRect.width;
+    const svgH = wrapperRect.height;
+    svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
+    svg.style.width = svgW + 'px';
+    svg.style.height = svgH + 'px';
+
+    // Build a rounded-rect path (clockwise so text flows naturally)
+    const path = [
+      `M ${x + r} ${y}`,
+      `L ${x + w - r} ${y}`,
+      `A ${r} ${r} 0 0 1 ${x + w} ${y + r}`,
+      `L ${x + w} ${y + h - r}`,
+      `A ${r} ${r} 0 0 1 ${x + w - r} ${y + h}`,
+      `L ${x + r} ${y + h}`,
+      `A ${r} ${r} 0 0 1 ${x} ${y + h - r}`,
+      `L ${x} ${y + r}`,
+      `A ${r} ${r} 0 0 1 ${x + r} ${y}`,
+    ].join(' ');
+
+    // Build the beer name string with dot separators
+    const sep = '  ·  ';
+    const beerStr = ORBIT_BEERS.join(sep) + sep;
+    // Duplicate for seamless loop
+    const fullStr = beerStr + beerStr + beerStr;
+
+    svg.innerHTML = \`
+      <defs>
+        <path id="orbit-path" d="\${path}" fill="none"/>
+      </defs>
+      <text class="orbit-path-text">
+        <textPath href="#orbit-path" startOffset="0">
+          <animate attributeName="startOffset" from="0%" to="-100%" dur="25s" repeatCount="indefinite"/>
+          \${fullStr}
+        </textPath>
+      </text>
+    \`;
+  }
+
+  buildOrbit();
+
+  // Rebuild on resize (debounced)
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(buildOrbit, 200);
+  });
+}
+
 Promise.all([fetch("data/beers.json"), fetch("data/cafes.json")])
   .then(res => Promise.all(res.map(r => r.json())))
   .then(([beersData, cafesData]) => {
     beers = beersData;
     cafes = cafesData;
     populateFilters();renderBeers(beers);renderRegions();renderQuiz();loadTrending();initCafeTagFilters();renderCafes();
+    initOrbit();
   })
   .catch(err => console.error("Error loading data:", err));
 
